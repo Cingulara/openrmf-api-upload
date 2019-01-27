@@ -1,0 +1,80 @@
+﻿
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using openstig_upload_api.Models;
+using System.IO;
+using System.Text;
+using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Hosting;
+using System.Xml.Serialization;
+using System.Xml;
+using Microsoft.AspNetCore.Cors.Infrastructure;
+using Newtonsoft.Json;
+using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
+
+using openstig_upload_api.Data;
+
+namespace openstig_upload_api.Controllers
+{
+    [Route("/")]
+    public class UploadController : Controller
+    {
+	    private readonly IArtifactRepository _artifactRepo;
+        private readonly ILogger<UploadController> _logger;
+        const string exampleSTIG = "/examples/asd-example.ckl";
+
+        public UploadController(IArtifactRepository artifactRepo, ILogger<UploadController> logger)
+        {
+            _logger = logger;
+            _artifactRepo = artifactRepo;
+        }
+
+        // POST as new
+        [HttpPost]
+        public async Task<IActionResult> SaveArtifact([FromForm] Artifact newArtifact)
+        {
+            try {
+                await _artifactRepo.AddArtifact(new Artifact () {
+                    title = newArtifact.title,
+                    created = DateTime.Now,
+                    UpdatedOn = DateTime.Now,
+                    type = newArtifact.type,
+                    rawChecklist = newArtifact.rawChecklist
+                });
+                return Ok();
+            }
+            catch (Exception ex) {
+                _logger.LogError(ex, "Error Saving");
+                return BadRequest();
+            }
+        }
+
+        // PUT as new
+        [HttpPut]
+        public async Task<IActionResult> UpdateArtifact([FromForm] Artifact newArtifact)
+        {
+            try {
+                await _artifactRepo.UpdateArtifact(newArtifact.id.ToString(), new Artifact () {
+                    title = newArtifact.title,
+                    created = newArtifact.created,
+                    UpdatedOn = DateTime.Now,
+                    type = newArtifact.type,
+                    rawChecklist = newArtifact.rawChecklist
+                });
+                return Ok();
+            }
+            catch (Exception ex) {
+                _logger.LogError(ex, "Error Saving");
+                return BadRequest();
+            }
+        }
+        
+    }
+}
