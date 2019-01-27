@@ -8,13 +8,13 @@ using openstig_upload_api.Models;
 using System.IO;
 using System.Text;
 using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using System.Xml.Serialization;
 using System.Xml;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
@@ -28,7 +28,6 @@ namespace openstig_upload_api.Controllers
     {
 	    private readonly IArtifactRepository _artifactRepo;
         private readonly ILogger<UploadController> _logger;
-        const string exampleSTIG = "/examples/asd-example.ckl";
 
         public UploadController(IArtifactRepository artifactRepo, ILogger<UploadController> logger)
         {
@@ -38,40 +37,55 @@ namespace openstig_upload_api.Controllers
 
         // POST as new
         [HttpPost]
-        public async Task<IActionResult> SaveArtifact([FromForm] Artifact newArtifact)
+        public async Task<IActionResult> UploadNewChecklist(IFormFile checklistFile, STIGtype checklistType)
         {
             try {
+                var name = checklistFile.FileName;
+                string rawChecklist =  string.Empty;
+                using (var reader = new StreamReader(checklistFile.OpenReadStream()))
+                {
+                    rawChecklist = reader.ReadToEnd();  
+                }
                 await _artifactRepo.AddArtifact(new Artifact () {
-                    title = newArtifact.title,
+                    title = "New Uploaded Checklist file " + name,
                     created = DateTime.Now,
                     UpdatedOn = DateTime.Now,
-                    type = newArtifact.type,
-                    rawChecklist = newArtifact.rawChecklist
+                    type = checklistType,
+                    rawChecklist = rawChecklist
                 });
+
                 return Ok();
             }
             catch (Exception ex) {
-                _logger.LogError(ex, "Error Saving");
+                _logger.LogError(ex, "Error uploading checklist file");
                 return BadRequest();
             }
         }
 
-        // PUT as new
+        // PUT as update
         [HttpPut]
-        public async Task<IActionResult> UpdateArtifact([FromForm] Artifact newArtifact)
+        public async Task<IActionResult> UpdateChecklist(string id, IFormFile checklistFile, STIGtype checklistType)
         {
             try {
-                await _artifactRepo.UpdateArtifact(newArtifact.id.ToString(), new Artifact () {
-                    title = newArtifact.title,
-                    created = newArtifact.created,
+
+                var name = checklistFile.FileName;
+                string rawChecklist =  string.Empty;
+                using (var reader = new StreamReader(checklistFile.OpenReadStream()))
+                {
+                    rawChecklist = reader.ReadToEnd();  
+                }
+                await _artifactRepo.UpdateArtifact(id, new Artifact () {
+                    title = "New Uploaded Checklist file " + name,
+                    created = DateTime.Now,
                     UpdatedOn = DateTime.Now,
-                    type = newArtifact.type,
-                    rawChecklist = newArtifact.rawChecklist
+                    type = checklistType,
+                    rawChecklist = rawChecklist
                 });
+
                 return Ok();
             }
             catch (Exception ex) {
-                _logger.LogError(ex, "Error Saving");
+                _logger.LogError(ex, "Error Uploading updated Checklist file");
                 return BadRequest();
             }
         }
