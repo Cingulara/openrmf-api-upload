@@ -44,13 +44,13 @@ namespace openstig_upload_api
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Info { Title = "openSTIG Scoring API", Version = "v1", 
-                    Description = "The Scoring API that goes with the openSTIG tool",
+                c.SwaggerDoc("v1", new Info { Title = "openSTIG Upload API", Version = "v1", 
+                    Description = "The Upload API that goes with the openSTIG tool",
                     Contact = new Contact
                     {
                         Name = "Dale Bingham",
                         Email = "dale.bingham@cingulara.com",
-                        Url = "https://github.com/Cingulara/openstig-api-scoring"
+                        Url = "https://github.com/Cingulara/openstig-api-upload"
                     } });
             });
 
@@ -94,7 +94,7 @@ namespace openstig_upload_api
             // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), specifying the Swagger JSON endpoint.
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "openSTIG Score API V1");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "openSTIG Upload API V1");
             });
 
             // ********************
