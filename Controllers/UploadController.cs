@@ -37,7 +37,7 @@ namespace openstig_upload_api.Controllers
 
         // POST as new
         [HttpPost]
-        public async Task<IActionResult> UploadNewChecklist(IFormFile checklistFile, STIGtype checklistType)
+        public async Task<IActionResult> UploadNewChecklist(IFormFile checklistFile, STIGtype checklistType, string title = "New Uploaded Checklist", string description = "")
         {
             try {
                 var name = checklistFile.FileName;
@@ -47,7 +47,8 @@ namespace openstig_upload_api.Controllers
                     rawChecklist = reader.ReadToEnd();  
                 }
                 await _artifactRepo.AddArtifact(new Artifact () {
-                    title = "New Uploaded Checklist file " + name,
+                    title = title,
+                    description = description + "\n\nUploaded filename: " + name,
                     created = DateTime.Now,
                     type = checklistType,
                     rawChecklist = rawChecklist
