@@ -2,6 +2,7 @@
 This is the openSTIG Upload API for uploading a CKL file. It has two calls.
 
 POST to / to save a new checklist
+
 PUT to /{id} to update a new checklist content but keep the rest in tact
 
 /swagger/ gives you the API structure.
