@@ -16,6 +16,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 
 using openstig_upload_api.Models;
 using openstig_upload_api.Data;
+using NATS.Client;
 
 namespace openstig_upload_api
 {
@@ -39,6 +40,15 @@ namespace openstig_upload_api
                 options.Database = Environment.GetEnvironmentVariable("mongodb");
             });
             
+            // Create a new connection factory to create a connection.
+            ConnectionFactory cf = new ConnectionFactory();
+            IConnection conn = cf.CreateConnection();
+            // setup the NATS server
+            services.Configure<NATSServer>(options =>
+            {
+                options.connection = conn;
+            });
+
             services.AddTransient<IArtifactRepository, ArtifactRepository>();
 
             // Register the Swagger generator, defining one or more Swagger documents

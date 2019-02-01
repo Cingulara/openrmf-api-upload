@@ -18,6 +18,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using NATS.Client;
 
 using openstig_upload_api.Data;
 
@@ -28,11 +29,13 @@ namespace openstig_upload_api.Controllers
     {
 	    private readonly IArtifactRepository _artifactRepo;
         private readonly ILogger<UploadController> _logger;
+        private readonly IConnection _msgServer;
 
-        public UploadController(IArtifactRepository artifactRepo, ILogger<UploadController> logger)
+        public UploadController(IArtifactRepository artifactRepo, ILogger<UploadController> logger, IOptions<NATSServer> msgServer)
         {
             _logger = logger;
             _artifactRepo = artifactRepo;
+            _msgServer = msgServer.Value.connection;
         }
 
         // POST as new
@@ -46,7 +49,9 @@ namespace openstig_upload_api.Controllers
                 {
                     rawChecklist = reader.ReadToEnd();  
                 }
+                Guid newId = Guid.NewGuid();
                 await _artifactRepo.AddArtifact(new Artifact () {
+                    id = newId,
                     title = title,
                     description = description + "\n\nUploaded filename: " + name,
                     created = DateTime.Now,
@@ -54,6 +59,8 @@ namespace openstig_upload_api.Controllers
                     rawChecklist = rawChecklist
                 });
 
+                // publish to the openstig save new realm the new ID we can use
+                _msgServer.Publish("openstig.save.new", Encoding.UTF8.GetBytes(newId.ToString()));
                 return Ok();
             }
             catch (Exception ex) {
@@ -81,6 +88,8 @@ namespace openstig_upload_api.Controllers
                     type = checklistType,
                     rawChecklist = rawChecklist
                 });
+                // publish to the openstig save new realm the new ID we can use
+                _msgServer.Publish("openstig.save.update", Encoding.UTF8.GetBytes(id));
 
                 return Ok();
             }
