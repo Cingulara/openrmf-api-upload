@@ -8,16 +8,17 @@ using openstig_upload_api.Models;
 using System.IO;
 using System.Text;
 using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using System.Xml.Serialization;
 using System.Xml;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using NATS.Client;
 
 using openstig_upload_api.Data;
 
@@ -28,50 +29,72 @@ namespace openstig_upload_api.Controllers
     {
 	    private readonly IArtifactRepository _artifactRepo;
         private readonly ILogger<UploadController> _logger;
-        const string exampleSTIG = "/examples/asd-example.ckl";
+        private readonly IConnection _msgServer;
 
-        public UploadController(IArtifactRepository artifactRepo, ILogger<UploadController> logger)
+        public UploadController(IArtifactRepository artifactRepo, ILogger<UploadController> logger, IOptions<NATSServer> msgServer)
         {
             _logger = logger;
             _artifactRepo = artifactRepo;
+            _msgServer = msgServer.Value.connection;
         }
 
         // POST as new
         [HttpPost]
-        public async Task<IActionResult> SaveArtifact([FromForm] Artifact newArtifact)
+        public async Task<IActionResult> UploadNewChecklist(IFormFile checklistFile, STIGtype checklistType, string title = "New Uploaded Checklist", string description = "")
         {
             try {
+                var name = checklistFile.FileName;
+                string rawChecklist =  string.Empty;
+                using (var reader = new StreamReader(checklistFile.OpenReadStream()))
+                {
+                    rawChecklist = reader.ReadToEnd();  
+                }
+                Guid newId = Guid.NewGuid();
                 await _artifactRepo.AddArtifact(new Artifact () {
-                    title = newArtifact.title,
+                    id = newId,
+                    title = title,
+                    description = description + "\n\nUploaded filename: " + name,
                     created = DateTime.Now,
-                    UpdatedOn = DateTime.Now,
-                    type = newArtifact.type,
-                    rawChecklist = newArtifact.rawChecklist
+                    type = checklistType,
+                    rawChecklist = rawChecklist
                 });
+
+                // publish to the openstig save new realm the new ID we can use
+                _msgServer.Publish("openstig.save.new", Encoding.UTF8.GetBytes(newId.ToString()));
                 return Ok();
             }
             catch (Exception ex) {
-                _logger.LogError(ex, "Error Saving");
+                _logger.LogError(ex, "Error uploading checklist file");
                 return BadRequest();
             }
         }
 
-        // PUT as new
+        // PUT as update
         [HttpPut]
-        public async Task<IActionResult> UpdateArtifact([FromForm] Artifact newArtifact)
+        public async Task<IActionResult> UpdateChecklist(string id, IFormFile checklistFile, STIGtype checklistType, string title = "New Uploaded Checklist", string description = "")
         {
             try {
-                await _artifactRepo.UpdateArtifact(newArtifact.id.ToString(), new Artifact () {
-                    title = newArtifact.title,
-                    created = newArtifact.created,
-                    UpdatedOn = DateTime.Now,
-                    type = newArtifact.type,
-                    rawChecklist = newArtifact.rawChecklist
+
+                var name = checklistFile.FileName;
+                string rawChecklist =  string.Empty;
+                using (var reader = new StreamReader(checklistFile.OpenReadStream()))
+                {
+                    rawChecklist = reader.ReadToEnd();  
+                }
+                await _artifactRepo.UpdateArtifact(id, new Artifact () {
+                    updatedOn = DateTime.Now,
+                    title = title,
+                    description = description,
+                    type = checklistType,
+                    rawChecklist = rawChecklist
                 });
+                // publish to the openstig save new realm the new ID we can use
+                _msgServer.Publish("openstig.save.update", Encoding.UTF8.GetBytes(id));
+
                 return Ok();
             }
             catch (Exception ex) {
-                _logger.LogError(ex, "Error Saving");
+                _logger.LogError(ex, "Error Uploading updated Checklist file");
                 return BadRequest();
             }
         }

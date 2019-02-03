@@ -63,7 +63,7 @@ namespace openstig_upload_api.Data {
             try
             {
                 var query = _context.Artifacts.Find(artifact => artifact.title.Contains(bodyText) &&
-                                    artifact.UpdatedOn >= updatedFrom);
+                                    artifact.updatedOn >= updatedFrom);
 
                 return await query.ToListAsync();
             }
@@ -110,7 +110,7 @@ namespace openstig_upload_api.Data {
             var filter = Builders<Artifact>.Filter.Eq(s => s.id.ToString(), id);
             var update = Builders<Artifact>.Update
                             .Set(s => s, body)
-                            .CurrentDate(s => s.UpdatedOn);
+                            .CurrentDate(s => s.updatedOn);
 
             try
             {
