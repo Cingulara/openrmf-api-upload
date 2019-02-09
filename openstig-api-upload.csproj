@@ -5,7 +5,11 @@
     <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
     <RootNamespace>openstig_upload_api</RootNamespace>
     <PublishWithAspNetCoreTargetManifest>false</PublishWithAspNetCoreTargetManifest>
-    <ProjectGuid>{05a94d30-9b4d-4bdc-b312-7f35957ea1a9}</ProjectGuid>
+    <ProjectGuid>{8664114e-ebd6-4413-8490-7a754518dd3d}</ProjectGuid>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <Version>0.1</Version>
+    <InformationalVersion>This is an alpha of the openSTIG Tool Upload API from Cingulara</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

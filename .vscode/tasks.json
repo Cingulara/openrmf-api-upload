@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/openstig-upload-api.csproj"
+                "${workspaceFolder}/openstig-api-upload.csproj"
             ],
             "problemMatcher": "$msCompile"
         }
