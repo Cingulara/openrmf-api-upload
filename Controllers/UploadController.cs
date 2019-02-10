@@ -55,6 +55,7 @@ namespace openstig_upload_api.Controllers
                     title = title,
                     description = description + "\n\nUploaded filename: " + name,
                     created = DateTime.Now,
+                    updatedOn = DateTime.Now,
                     type = checklistType,
                     rawChecklist = rawChecklist
                 });
