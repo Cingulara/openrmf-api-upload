@@ -195,16 +195,15 @@ namespace openstig_upload_api.Models
         EnclaveTestAndDevelopment = 2200,
 
         /* Operating Systems */
-
         AppleMacOSX1011Workstation = 2300,
         AppleMacOSX1012Workstation = 2305,
         AppleMacOSX1013Workstation = 2310,
         IBMHMC = 2320,
-        IMBzVMCAVMSecure = 2325,
+        IBMzVMCAVMSecure = 2325,
         SLESV11SystemZ = 2330,
         zOSAFC2 = 2335,
         zOSRACF = 2340,
-        zOSTSS = 2350,
+        zOSTSS = 2345,
         AIX61 = 2350,
         CanonicalUbuntu1604 = 2355,
         OracleLinux5 = 2360,
