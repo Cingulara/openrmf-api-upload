@@ -80,7 +80,6 @@ namespace openstig_upload_api.Models
         Firefox = 415,
 
         /* Databases */
-
         SQLServer2012Database = 500,
         SQLServer2012Instance = 502,
         SQLServer2014Database = 505,
@@ -110,9 +109,9 @@ namespace openstig_upload_api.Models
 
         /* Desktop Applications */
         AdobeAcrobatProDCClassic = 700,
-        AdobeAcrobatProDCCOntinuous = 705,
+        AdobeAcrobatProDCContinuous = 705,
         AdobeAcrobatReaderDCClassic = 710,
-        AdobeAcrobatReaderDCCOntinuous = 715,
+        AdobeAcrobatReaderDCContinuous = 715,
 
         /* ESRI */
         EsriArcGISServer103 = 800,
