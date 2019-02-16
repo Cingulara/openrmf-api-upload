@@ -66,11 +66,10 @@ namespace openstig_upload_api.Controllers
         }
 
         // PUT as update
-        [HttpPut]
+        [HttpPut("{id}")]
         public async Task<IActionResult> UpdateChecklist(string id, IFormFile checklistFile, STIGtype checklistType, string title = "New Uploaded Checklist", string description = "")
         {
             try {
-
                 var name = checklistFile.FileName;
                 string rawChecklist =  string.Empty;
                 using (var reader = new StreamReader(checklistFile.OpenReadStream()))
