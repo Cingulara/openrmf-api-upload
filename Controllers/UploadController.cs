@@ -1,10 +1,8 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using openstig_upload_api.Models;
 using System.IO;
 using System.Text;
 using Microsoft.AspNetCore;
@@ -15,12 +13,11 @@ using System.Xml.Serialization;
 using System.Xml;
 using Newtonsoft.Json;
 using Microsoft.Extensions.Options;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using NATS.Client;
 
 using openstig_upload_api.Data;
+using openstig_upload_api.Models;
 
 namespace openstig_upload_api.Controllers
 {
@@ -51,7 +48,6 @@ namespace openstig_upload_api.Controllers
                 }
                 Guid newId = Guid.NewGuid();
                 await _artifactRepo.AddArtifact(new Artifact () {
-                    id = newId,
                     title = title,
                     description = description + "\n\nUploaded filename: " + name,
                     created = DateTime.Now,
