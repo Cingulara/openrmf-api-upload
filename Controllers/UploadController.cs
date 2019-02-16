@@ -37,7 +37,7 @@ namespace openstig_upload_api.Controllers
 
         // POST as new
         [HttpPost]
-        public async Task<IActionResult> UploadNewChecklist(IFormFile checklistFile, STIGtype checklistType, string title = "New Uploaded Checklist", string description = "")
+        public async Task<IActionResult> UploadNewChecklist(IFormFile checklistFile, STIGtype type, string title = "New Uploaded Checklist", string description = "")
         {
             try {
                 var name = checklistFile.FileName;
@@ -51,7 +51,7 @@ namespace openstig_upload_api.Controllers
                     description = description + "\n\nUploaded filename: " + name,
                     created = DateTime.Now,
                     updatedOn = DateTime.Now,
-                    type = checklistType,
+                    type = type,
                     rawChecklist = rawChecklist
                 });
 
@@ -67,7 +67,7 @@ namespace openstig_upload_api.Controllers
 
         // PUT as update
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateChecklist(string id, IFormFile checklistFile, STIGtype checklistType, string title = "New Uploaded Checklist", string description = "")
+        public async Task<IActionResult> UpdateChecklist(string id, IFormFile checklistFile, STIGtype type, string title = "New Uploaded Checklist", string description = "")
         {
             try {
                 var name = checklistFile.FileName;
@@ -80,7 +80,7 @@ namespace openstig_upload_api.Controllers
                     updatedOn = DateTime.Now,
                     title = title,
                     description = description,
-                    type = checklistType,
+                    type = type,
                     rawChecklist = rawChecklist
                 });
                 // publish to the openstig save new realm the new ID we can use
