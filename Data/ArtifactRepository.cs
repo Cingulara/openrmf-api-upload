@@ -73,11 +73,12 @@ namespace openstig_upload_api.Data {
             }
         }
         
-        public async Task AddArtifact(Artifact item)
+        public async Task<Artifact> AddArtifact(Artifact item)
         {
             try
             {
                 await _context.Artifacts.InsertOneAsync(item);
+                return item;
             }
             catch (Exception ex)
             {
@@ -107,9 +108,6 @@ namespace openstig_upload_api.Data {
         public async Task<bool> UpdateArtifact(string id, Artifact body)
         {
             var filter = Builders<Artifact>.Filter.Eq(s => s.InternalId, GetInternalId(id));
-            // var update = Builders<TempAgenda>.Update.Set(x => x.Items.Single(p => p.Id.Equals(itemId)).Title, title);
-            // var result = _collection.UpdateOneAsync(filter, update).Result;
-
             try
             {
                 body.InternalId = GetInternalId(id);

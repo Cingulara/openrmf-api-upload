@@ -46,8 +46,7 @@ namespace openstig_upload_api.Controllers
                 {
                     rawChecklist = reader.ReadToEnd();  
                 }
-                Guid newId = Guid.NewGuid();
-                await _artifactRepo.AddArtifact(new Artifact () {
+                var record = await _artifactRepo.AddArtifact(new Artifact () {
                     title = title,
                     description = description + "\n\nUploaded filename: " + name,
                     created = DateTime.Now,
@@ -57,7 +56,7 @@ namespace openstig_upload_api.Controllers
                 });
 
                 // publish to the openstig save new realm the new ID we can use
-                _msgServer.Publish("openstig.save.new", Encoding.UTF8.GetBytes(newId.ToString()));
+                _msgServer.Publish("openstig.save.new", Encoding.UTF8.GetBytes(record.InternalId.ToString()));
                 return Ok();
             }
             catch (Exception ex) {
