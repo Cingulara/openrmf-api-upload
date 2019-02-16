@@ -20,8 +20,5 @@ namespace openstig_upload_api.Data {
 
         // update just a single document
         Task<bool> UpdateArtifact(string id, Artifact body);
-
-        // should be used with high cautious, only in relation with demo setup
-        // Task<bool> RemoveAllArtifacts();
     }
 }

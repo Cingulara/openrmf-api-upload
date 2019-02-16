@@ -46,8 +46,7 @@ namespace openstig_upload_api.Data {
             {
                 ObjectId internalId = GetInternalId(id);
                 return await _context.Artifacts
-                                .Find(artifact => artifact.id.ToString() == id 
-                                    || artifact.InternalId == internalId).FirstOrDefaultAsync();
+                                .Find(artifact => artifact.InternalId == internalId).FirstOrDefaultAsync();
             }
             catch (Exception ex)
             {
@@ -107,18 +106,15 @@ namespace openstig_upload_api.Data {
 
         public async Task<bool> UpdateArtifact(string id, Artifact body)
         {
-            var filter = Builders<Artifact>.Filter.Eq(s => s.id.ToString(), id);
-            var update = Builders<Artifact>.Update
-                            .Set(s => s, body)
-                            .CurrentDate(s => s.updatedOn);
+            var filter = Builders<Artifact>.Filter.Eq(s => s.InternalId, GetInternalId(id));
+            // var update = Builders<TempAgenda>.Update.Set(x => x.Items.Single(p => p.Id.Equals(itemId)).Title, title);
+            // var result = _collection.UpdateOneAsync(filter, update).Result;
 
             try
             {
-                UpdateResult actionResult 
-                    = await _context.Artifacts.UpdateOneAsync(filter, update);
-
-                return actionResult.IsAcknowledged
-                    && actionResult.ModifiedCount > 0;
+                body.InternalId = GetInternalId(id);
+                var actionResult = await _context.Artifacts.ReplaceOneAsync(filter, body);
+                return actionResult.IsAcknowledged && actionResult.ModifiedCount > 0;
             }
             catch (Exception ex)
             {
@@ -126,22 +122,5 @@ namespace openstig_upload_api.Data {
                 throw ex;
             }
         }
-
-        // public async Task<bool> RemoveAllArtifacts()
-        // {
-        //     try
-        //     {
-        //         DeleteResult actionResult 
-        //             = await _context.Artifacts.DeleteManyAsync(new BsonDocument());
-
-        //         return actionResult.IsAcknowledged
-        //             && actionResult.DeletedCount > 0;
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         // log or manage the exception
-        //         throw ex;
-        //     }
-        // }
     }
 }
