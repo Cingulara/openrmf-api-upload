@@ -13,7 +13,7 @@ namespace openstig_upload_api.Data {
         Task<IEnumerable<Artifact>> GetArtifact(string bodyText, DateTime updatedFrom, long headerSizeLimit);
 
         // add new note document
-        Task AddArtifact(Artifact item);
+        Task<Artifact> AddArtifact(Artifact item);
 
         // remove a single document
         Task<bool> RemoveArtifact(string id);

@@ -37,7 +37,7 @@ namespace openstig_upload_api.Controllers
 
         // POST as new
         [HttpPost]
-        public async Task<IActionResult> UploadNewChecklist(IFormFile checklistFile, STIGtype checklistType, string title = "New Uploaded Checklist", string description = "")
+        public async Task<IActionResult> UploadNewChecklist(IFormFile checklistFile, STIGtype type, string title = "New Uploaded Checklist", string description = "")
         {
             try {
                 var name = checklistFile.FileName;
@@ -46,18 +46,17 @@ namespace openstig_upload_api.Controllers
                 {
                     rawChecklist = reader.ReadToEnd();  
                 }
-                Guid newId = Guid.NewGuid();
-                await _artifactRepo.AddArtifact(new Artifact () {
+                var record = await _artifactRepo.AddArtifact(new Artifact () {
                     title = title,
                     description = description + "\n\nUploaded filename: " + name,
                     created = DateTime.Now,
                     updatedOn = DateTime.Now,
-                    type = checklistType,
+                    type = type,
                     rawChecklist = rawChecklist
                 });
 
                 // publish to the openstig save new realm the new ID we can use
-                _msgServer.Publish("openstig.save.new", Encoding.UTF8.GetBytes(newId.ToString()));
+                _msgServer.Publish("openstig.save.new", Encoding.UTF8.GetBytes(record.InternalId.ToString()));
                 return Ok();
             }
             catch (Exception ex) {
@@ -67,11 +66,10 @@ namespace openstig_upload_api.Controllers
         }
 
         // PUT as update
-        [HttpPut]
-        public async Task<IActionResult> UpdateChecklist(string id, IFormFile checklistFile, STIGtype checklistType, string title = "New Uploaded Checklist", string description = "")
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateChecklist(string id, IFormFile checklistFile, STIGtype type, string title = "New Uploaded Checklist", string description = "")
         {
             try {
-
                 var name = checklistFile.FileName;
                 string rawChecklist =  string.Empty;
                 using (var reader = new StreamReader(checklistFile.OpenReadStream()))
@@ -82,7 +80,7 @@ namespace openstig_upload_api.Controllers
                     updatedOn = DateTime.Now,
                     title = title,
                     description = description,
-                    type = checklistType,
+                    type = type,
                     rawChecklist = rawChecklist
                 });
                 // publish to the openstig save new realm the new ID we can use
