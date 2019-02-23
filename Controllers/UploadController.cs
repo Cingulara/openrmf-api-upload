@@ -37,7 +37,7 @@ namespace openstig_upload_api.Controllers
 
         // POST as new
         [HttpPost]
-        public async Task<IActionResult> UploadNewChecklist(IFormFile checklistFile, STIGtype type, string title = "New Uploaded Checklist", string description = "")
+        public async Task<IActionResult> UploadNewChecklist(IFormFile checklistFile, STIGtype type, string title = "New Uploaded Checklist", string description = "", string system="None")
         {
             try {
                 var name = checklistFile.FileName;
@@ -49,6 +49,7 @@ namespace openstig_upload_api.Controllers
                 var record = await _artifactRepo.AddArtifact(new Artifact () {
                     title = title,
                     description = description + "\n\nUploaded filename: " + name,
+                    system = system,
                     created = DateTime.Now,
                     updatedOn = DateTime.Now,
                     type = type,
@@ -67,7 +68,7 @@ namespace openstig_upload_api.Controllers
 
         // PUT as update
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateChecklist(string id, IFormFile checklistFile, STIGtype type, string title = "New Uploaded Checklist", string description = "")
+        public async Task<IActionResult> UpdateChecklist(string id, IFormFile checklistFile, STIGtype type, string title = "New Uploaded Checklist", string description = "", string system="None")
         {
             try {
                 var name = checklistFile.FileName;
@@ -79,6 +80,7 @@ namespace openstig_upload_api.Controllers
                 await _artifactRepo.UpdateArtifact(id, new Artifact () {
                     updatedOn = DateTime.Now,
                     title = title,
+                    system = system,
                     description = description,
                     type = type,
                     rawChecklist = rawChecklist
