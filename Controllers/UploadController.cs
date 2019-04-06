@@ -118,7 +118,7 @@ namespace openstig_upload_api.Controllers
           if (child.FirstChild.InnerText == "releaseinfo")
             newArtifact.stigRelease = child.LastChild.InnerText;
           else if (child.FirstChild.InnerText == "title")
-            newArtifact.title = child.LastChild.InnerText;
+            newArtifact.stigType = child.LastChild.InnerText;
         }
         return newArtifact;
       }
