@@ -47,13 +47,6 @@ namespace openstig_upload_api.Controllers
                     {
                         rawChecklist = reader.ReadToEnd();  
                     }
-                    // put the XML file into the structure
-                    // get the <CHECKLIST><ASSET><HOST_NAME></HOST_NAME>
-                    // 
-                    // <CHECKLIST><STIGS><iSTIG><STIG_INFO><SI_DATA>
-                    //    <SID_NAME>title</SID_NAME>
-                    //    <SID_NAME>releaseinfo</SID_NAME>
-
                     var record = await _artifactRepo.AddArtifact(MakeArtifactRecord(system, rawChecklist));
 
                     // publish to the openstig save new realm the new ID we can use
@@ -81,11 +74,8 @@ namespace openstig_upload_api.Controllers
               {
                   rawChecklist = reader.ReadToEnd();  
               }
-              await _artifactRepo.UpdateArtifact(id, new Artifact () {
-                  system = system,
-                  updatedOn = DateTime.Now,
-                  rawChecklist = rawChecklist
-              });
+              // update and fill in the same info
+              await _artifactRepo.UpdateArtifact(id, MakeArtifactRecord(system, rawChecklist));
               // publish to the openstig save new realm the new ID we can use
               _msgServer.Publish("openstig.save.update", Encoding.UTF8.GetBytes(id));
 
