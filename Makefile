@@ -1,4 +1,4 @@
-VERSION ?= 0.4
+VERSION ?= 0.6
 NAME ?= "openstig-api-upload"
 AUTHOR ?= "Dale Bingham"
 PORT_EXT ?= 8086
