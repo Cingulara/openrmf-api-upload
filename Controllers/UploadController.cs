@@ -125,7 +125,7 @@ namespace openstig_upload_api.Controllers
         // get the title and release which is a list of children of child nodes buried deeper :face-palm-emoji:
         XmlNodeList stiginfoList = xmlDoc.GetElementsByTagName("STIG_INFO");
         foreach (XmlElement child in stiginfoList.Item(0).ChildNodes) {
-          if (child.FirstChild.InnerText == "releaseInfo")
+          if (child.FirstChild.InnerText == "releaseinfo")
             newArtifact.stigRelease = child.LastChild.InnerText;
           else if (child.FirstChild.InnerText == "title")
             newArtifact.title = child.LastChild.InnerText;
