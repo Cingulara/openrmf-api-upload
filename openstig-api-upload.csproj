@@ -8,8 +8,8 @@
     <ProjectGuid>{8664114e-ebd6-4413-8490-7a754518dd3d}</ProjectGuid>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
-    <Version>0.1</Version>
-    <InformationalVersion>This is an alpha of the openSTIG Tool Upload API from Cingulara</InformationalVersion>
+    <Version>0.6</Version>
+    <InformationalVersion>This is a beta of the openSTIG Tool Upload API from Cingulara</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
