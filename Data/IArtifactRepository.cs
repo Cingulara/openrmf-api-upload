@@ -10,7 +10,7 @@ namespace openstig_upload_api.Data {
         Task<Artifact> GetArtifact(string id);
 
         // query after multiple parameters
-        Task<IEnumerable<Artifact>> GetArtifact(string bodyText, DateTime updatedFrom, long headerSizeLimit);
+        //Task<IEnumerable<Artifact>> GetArtifact(string bodyText, DateTime updatedFrom, long headerSizeLimit);
 
         // add new note document
         Task<Artifact> AddArtifact(Artifact item);
