@@ -1,8 +1,8 @@
 using MongoDB.Driver;
-using openstig_upload_api.Models;
+using openrmf_upload_api.Models;
 using Microsoft.Extensions.Options;
 
-namespace openstig_upload_api.Data
+namespace openrmf_upload_api.Data
 {
     public class ArtifactContext
     {

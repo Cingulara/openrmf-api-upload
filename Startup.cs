@@ -14,11 +14,11 @@ using Swashbuckle.AspNetCore.Swagger;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 
-using openstig_upload_api.Models;
-using openstig_upload_api.Data;
+using openrmf_upload_api.Models;
+using openrmf_upload_api.Data;
 using NATS.Client;
 
-namespace openstig_upload_api
+namespace openrmf_upload_api
 {
     public class Startup
     {
