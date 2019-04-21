@@ -8,7 +8,8 @@ PUT to /{id} to update a new checklist content but keep the rest in tact
 /swagger/ gives you the API structure.
 
 ## Making your local Docker image
-docker build --rm -t openrmf-api-upload:0.1 .
+* make build
+* make latest
 
 ## creating the user
 * ~/mongodb/bin/mongo 'mongodb://root:myp2ssw0rd@localhost'
