@@ -120,6 +120,22 @@ namespace openrmf_upload_api.Controllers
           else if (child.FirstChild.InnerText == "title")
             newArtifact.stigType = child.LastChild.InnerText;
         }
+
+        // shorten the names a bit
+        if (newArtifact != null && !string.IsNullOrEmpty(newArtifact.stigType)){
+          newArtifact.stigType = newArtifact.stigType.Replace("Security Technical Implementation Guide", "STIG");
+          newArtifact.stigType = newArtifact.stigType.Replace("Windows", "WIN");
+          newArtifact.stigType = newArtifact.stigType.Replace("Application Security and Development", "ASD");
+          newArtifact.stigType = newArtifact.stigType.Replace("Microsoft Internet Explorer", "MSIE");
+          newArtifact.stigType = newArtifact.stigType.Replace("Red Hat Enterprise Linux", "REL");
+          newArtifact.stigType = newArtifact.stigType.Replace("MS SQL Server", "MSSQL");
+          newArtifact.stigType = newArtifact.stigType.Replace("Server", "SVR");
+          newArtifact.stigType = newArtifact.stigType.Replace("Workstation", "WRK");
+        }
+        if (newArtifact != null && !string.IsNullOrEmpty(newArtifact.stigRelease)) {
+          newArtifact.stigRelease = newArtifact.stigRelease.Replace("Release: ", "R"); // i.e. R11, R2 for the release number
+          newArtifact.stigRelease = newArtifact.stigRelease.Replace("Benchmark Date:","dated");
+        }
         return newArtifact;
       }
 

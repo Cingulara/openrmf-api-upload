@@ -23,8 +23,6 @@ PUT to /{id} to update a new checklist content but keep the rest in tact
 
 ## Messaging Platform
 Using NATS from Synadia to have a messaging backbone and eventual consistency. Currently publishing to these known items:
-* openrmf.save.new with payload (new Guid Id)
-* openrmf.save.update with payload (new Guid Id)
 * openrmf.upload.new with payload (new Guid Id)
 * openrmf.upload.update with payload (new Guid Id)
 
