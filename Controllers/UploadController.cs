@@ -100,7 +100,7 @@ namespace openrmf_upload_api.Controllers
         XmlDocument xmlDoc = new XmlDocument();
         xmlDoc.LoadXml(rawChecklist);
 
-        newArtifact.hostName = "Unknown";
+        newArtifact.hostName = "Unknown-Host";
         XmlNodeList assetList = xmlDoc.GetElementsByTagName("ASSET");
         // get the host name from here
         foreach (XmlElement child in assetList.Item(0).ChildNodes)
