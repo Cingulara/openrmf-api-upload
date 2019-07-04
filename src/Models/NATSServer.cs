@@ -1,6 +1,6 @@
 using NATS.Client;
 
-namespace openstig_upload_api.Models
+namespace openrmf_upload_api.Models
 {
     public class NATSServer
     {

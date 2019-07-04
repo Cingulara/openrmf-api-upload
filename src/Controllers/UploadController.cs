@@ -16,10 +16,10 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using NATS.Client;
 
-using openstig_upload_api.Data;
-using openstig_upload_api.Models;
+using openrmf_upload_api.Data;
+using openrmf_upload_api.Models;
 
-namespace openstig_upload_api.Controllers
+namespace openrmf_upload_api.Controllers
 {
     [Route("/")]
     public class UploadController : Controller
@@ -49,8 +49,8 @@ namespace openstig_upload_api.Controllers
                     }
                     var record = await _artifactRepo.AddArtifact(MakeArtifactRecord(system, rawChecklist));
 
-                    // publish to the openstig save new realm the new ID we can use
-                    _msgServer.Publish("openstig.save.new", Encoding.UTF8.GetBytes(record.InternalId.ToString()));
+                    // publish to the openrmf save new realm the new ID we can use
+                    _msgServer.Publish("openrmf.save.new", Encoding.UTF8.GetBytes(record.InternalId.ToString()));
                   }
                   return Ok();
                 }
@@ -76,8 +76,8 @@ namespace openstig_upload_api.Controllers
               }
               // update and fill in the same info
               await _artifactRepo.UpdateArtifact(id, MakeArtifactRecord(system, rawChecklist));
-              // publish to the openstig save new realm the new ID we can use
-              _msgServer.Publish("openstig.save.update", Encoding.UTF8.GetBytes(id));
+              // publish to the openrmf save new realm the new ID we can use
+              _msgServer.Publish("openrmf.save.update", Encoding.UTF8.GetBytes(id));
 
               return Ok();
           }
@@ -100,7 +100,7 @@ namespace openstig_upload_api.Controllers
         XmlDocument xmlDoc = new XmlDocument();
         xmlDoc.LoadXml(rawChecklist);
 
-        newArtifact.hostName = "Unknown";
+        newArtifact.hostName = "Unknown-Host";
         XmlNodeList assetList = xmlDoc.GetElementsByTagName("ASSET");
         // get the host name from here
         foreach (XmlElement child in assetList.Item(0).ChildNodes)
@@ -119,6 +119,22 @@ namespace openstig_upload_api.Controllers
             newArtifact.stigRelease = child.LastChild.InnerText;
           else if (child.FirstChild.InnerText == "title")
             newArtifact.stigType = child.LastChild.InnerText;
+        }
+
+        // shorten the names a bit
+        if (newArtifact != null && !string.IsNullOrEmpty(newArtifact.stigType)){
+          newArtifact.stigType = newArtifact.stigType.Replace("Security Technical Implementation Guide", "STIG");
+          newArtifact.stigType = newArtifact.stigType.Replace("Windows", "WIN");
+          newArtifact.stigType = newArtifact.stigType.Replace("Application Security and Development", "ASD");
+          newArtifact.stigType = newArtifact.stigType.Replace("Microsoft Internet Explorer", "MSIE");
+          newArtifact.stigType = newArtifact.stigType.Replace("Red Hat Enterprise Linux", "REL");
+          newArtifact.stigType = newArtifact.stigType.Replace("MS SQL Server", "MSSQL");
+          newArtifact.stigType = newArtifact.stigType.Replace("Server", "SVR");
+          newArtifact.stigType = newArtifact.stigType.Replace("Workstation", "WRK");
+        }
+        if (newArtifact != null && !string.IsNullOrEmpty(newArtifact.stigRelease)) {
+          newArtifact.stigRelease = newArtifact.stigRelease.Replace("Release: ", "R"); // i.e. R11, R2 for the release number
+          newArtifact.stigRelease = newArtifact.stigRelease.Replace("Benchmark Date:","dated");
         }
         return newArtifact;
       }

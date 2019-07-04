@@ -1,4 +1,4 @@
-using openstig_upload_api.Models;
+using openrmf_upload_api.Models;
 using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
@@ -6,7 +6,7 @@ using MongoDB.Driver;
 using MongoDB.Bson;
 using Microsoft.Extensions.Options;
 
-namespace openstig_upload_api.Data {
+namespace openrmf_upload_api.Data {
     public class ArtifactRepository : IArtifactRepository
     {
         private readonly ArtifactContext _context = null;
