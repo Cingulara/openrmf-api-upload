@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Bson;
 
-namespace openstig_upload_api.Models
+namespace openrmf_upload_api.Models
 {
     [Serializable]
     public class Artifact

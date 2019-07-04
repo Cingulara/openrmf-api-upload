@@ -1,5 +1,5 @@
-# openstig-api-upload
-This is the openSTIG Upload API for uploading a CKL file. It has two calls.
+# openrmf-api-upload
+This is the openRMF Upload API for uploading a CKL file. It has two calls.
 
 POST to / to save a new checklist
 
@@ -8,24 +8,23 @@ PUT to /{id} to update a new checklist content but keep the rest in tact
 /swagger/ gives you the API structure.
 
 ## Making your local Docker image
-docker build --rm -t openstig-api-upload:0.1 .
+* make build
+* make latest
 
 ## creating the user
 * ~/mongodb/bin/mongo 'mongodb://root:myp2ssw0rd@localhost'
 * use admin
-* db.createUser({ user: "openstig" , pwd: "openstig1234!", roles: ["readWriteAnyDatabase"]});
-* use openstig
+* db.createUser({ user: "openrmf" , pwd: "openrmf1234!", roles: ["readWriteAnyDatabase"]});
+* use openrmf
 * db.createCollection("Artifacts");
 
 ## connecting to the database collection straight
-~/mongodb/bin/mongo 'mongodb://openstig:openstig1234!@localhost/openstig?authSource=admin'
+~/mongodb/bin/mongo 'mongodb://openrmf:openrmf1234!@localhost/openrmf?authSource=admin'
 
 ## Messaging Platform
 Using NATS from Synadia to have a messaging backbone and eventual consistency. Currently publishing to these known items:
-* openstig.save.new with payload (new Guid Id)
-* openstig.save.update with payload (new Guid Id)
-* openstig.upload.new with payload (new Guid Id)
-* openstig.upload.update with payload (new Guid Id)
+* openrmf.upload.new with payload (new Guid Id)
+* openrmf.upload.update with payload (new Guid Id)
 
 More will follow as this expands for auditing, logging, etc.
 

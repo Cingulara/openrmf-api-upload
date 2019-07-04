@@ -1,9 +1,9 @@
-using openstig_upload_api.Models;
+using openrmf_upload_api.Models;
 using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
 
-namespace openstig_upload_api.Data {
+namespace openrmf_upload_api.Data {
     public interface IArtifactRepository
     {
         Task<IEnumerable<Artifact>> GetAllArtifacts();

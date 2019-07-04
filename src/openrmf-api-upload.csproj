@@ -1,15 +1,17 @@
+
+
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
-    <RootNamespace>openstig_upload_api</RootNamespace>
+    <RootNamespace>openrmf_upload_api</RootNamespace>
     <PublishWithAspNetCoreTargetManifest>false</PublishWithAspNetCoreTargetManifest>
     <ProjectGuid>{8664114e-ebd6-4413-8490-7a754518dd3d}</ProjectGuid>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
-    <Version>0.6</Version>
-    <InformationalVersion>This is a beta of the openSTIG Tool Upload API from Cingulara</InformationalVersion>
+    <Version>0.7</Version>
+    <InformationalVersion>This is a beta of the openRMF Tool Upload API from Cingulara</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
