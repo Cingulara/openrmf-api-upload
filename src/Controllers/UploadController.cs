@@ -5,16 +5,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using System.IO;
 using System.Text;
-using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Cors.Infrastructure;
-using System.Xml.Serialization;
 using System.Xml;
-using Newtonsoft.Json;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using NATS.Client;
+using Microsoft.AspNetCore.Authorization;
 
 using openrmf_upload_api.Data;
 using openrmf_upload_api.Models;
@@ -37,6 +33,7 @@ namespace openrmf_upload_api.Controllers
 
         // POST as new
         [HttpPost]
+        [Authorize(Roles = "Administrator,Editor,Assessor")]
         public async Task<IActionResult> UploadNewChecklist(List<IFormFile> checklistFiles, string system="None")
         {
             try {
@@ -65,6 +62,7 @@ namespace openrmf_upload_api.Controllers
 
         // PUT as update
         [HttpPut("{id}")]
+        [Authorize(Roles = "Administrator,Editor,Assessor")]
         public async Task<IActionResult> UpdateChecklist(string id, IFormFile checklistFile, string system="None")
         {
           try {
