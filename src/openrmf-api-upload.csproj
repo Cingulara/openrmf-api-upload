@@ -11,7 +11,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <Version>0.8</Version>
-    <InformationalVersion>This is a beta of the openRMF Tool Upload API from Cingulara</InformationalVersion>
+    <InformationalVersion>This is a beta of the OpenRMF Tool Upload API from Cingulara</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

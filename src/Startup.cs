@@ -140,7 +140,7 @@ namespace openrmf_upload_api
             // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), specifying the Swagger JSON endpoint.
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "openRMF Upload API V1");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "OpenRMF Upload API V1");
             });
 
             // ********************
