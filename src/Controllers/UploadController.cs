@@ -44,7 +44,12 @@ namespace openrmf_upload_api.Controllers
                     {
                         rawChecklist = reader.ReadToEnd();  
                     }
-                    var record = await _artifactRepo.AddArtifact(MakeArtifactRecord(system, rawChecklist));
+                    // create the new record
+                    Artifact newArtifact = MakeArtifactRecord(system, rawChecklist);
+                    // grab the user/system ID from the token
+                    newArtifact.updatedBy = Guid.Parse(this.User.Claims.Where(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier).FirstOrDefault().Value);
+                    // save it to the database
+                    var record = await _artifactRepo.AddArtifact(newArtifact);
 
                     // publish to the openrmf save new realm the new ID we can use
                     _msgServer.Publish("openrmf.save.new", Encoding.UTF8.GetBytes(record.InternalId.ToString()));
@@ -73,7 +78,15 @@ namespace openrmf_upload_api.Controllers
                   rawChecklist = reader.ReadToEnd();  
               }
               // update and fill in the same info
-              await _artifactRepo.UpdateArtifact(id, MakeArtifactRecord(system, rawChecklist));
+              Artifact newArtifact = MakeArtifactRecord(system, rawChecklist);
+              Artifact oldArtifact = await _artifactRepo.GetArtifact(id);
+              if (oldArtifact != null && oldArtifact.createdBy != Guid.Empty){
+                // this is an update of an older one, keep the createdBy
+                newArtifact.createdBy = oldArtifact.createdBy;
+              }
+              oldArtifact = null;
+              newArtifact.updatedBy = Guid.Parse(this.User.Claims.Where(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier).FirstOrDefault().Value);
+              await _artifactRepo.UpdateArtifact(id, newArtifact);
               // publish to the openrmf save new realm the new ID we can use
               _msgServer.Publish("openrmf.save.update", Encoding.UTF8.GetBytes(id));
 
