@@ -47,7 +47,7 @@ namespace openrmf_upload_api.Controllers
                     // create the new record
                     Artifact newArtifact = MakeArtifactRecord(system, rawChecklist);
                     // grab the user/system ID from the token
-                    newArtifact.updatedBy = Guid.Parse(this.User.Claims.Where(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier).FirstOrDefault().Value);
+                    newArtifact.createdBy = Guid.Parse(this.User.Claims.Where(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier).FirstOrDefault().Value);
                     // save it to the database
                     var record = await _artifactRepo.AddArtifact(newArtifact);
 
