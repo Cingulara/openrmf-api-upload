@@ -46,13 +46,17 @@ namespace openrmf_upload_api.Controllers
                     }
                     // create the new record
                     Artifact newArtifact = MakeArtifactRecord(system, rawChecklist);
-                    // grab the user/system ID from the token
-                    newArtifact.createdBy = Guid.Parse(this.User.Claims.Where(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier).FirstOrDefault().Value);
+                    // grab the user/system ID from the token if there which is *should* always be
+                    var claim = this.User.Claims.Where(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier).FirstOrDefault();
+                    if (claim != null) { // get the value
+                      newArtifact.createdBy = Guid.Parse(claim.Value);
+                    }
                     // save it to the database
                     var record = await _artifactRepo.AddArtifact(newArtifact);
 
                     // publish to the openrmf save new realm the new ID we can use
                     _msgServer.Publish("openrmf.save.new", Encoding.UTF8.GetBytes(record.InternalId.ToString()));
+                    _msgServer.Flush();
                   }
                   return Ok();
                 }
@@ -81,15 +85,21 @@ namespace openrmf_upload_api.Controllers
               Artifact newArtifact = MakeArtifactRecord(system, rawChecklist);
               Artifact oldArtifact = await _artifactRepo.GetArtifact(id);
               if (oldArtifact != null && oldArtifact.createdBy != Guid.Empty){
-                // this is an update of an older one, keep the createdBy
+                // this is an update of an older one, keep the createdBy intact
                 newArtifact.createdBy = oldArtifact.createdBy;
               }
               oldArtifact = null;
-              newArtifact.updatedBy = Guid.Parse(this.User.Claims.Where(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier).FirstOrDefault().Value);
+
+              // grab the user/system ID from the token if there which is *should* always be
+              var claim = this.User.Claims.Where(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier).FirstOrDefault();
+              if (claim != null) { // get the value
+                newArtifact.updatedBy = Guid.Parse(claim.Value);
+              }
+
               await _artifactRepo.UpdateArtifact(id, newArtifact);
               // publish to the openrmf save new realm the new ID we can use
               _msgServer.Publish("openrmf.save.update", Encoding.UTF8.GetBytes(id));
-
+              _msgServer.Flush();
               return Ok();
           }
           catch (Exception ex) {
