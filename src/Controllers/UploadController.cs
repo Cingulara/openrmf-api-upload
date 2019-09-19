@@ -44,6 +44,7 @@ namespace openrmf_upload_api.Controllers
                     {
                         rawChecklist = reader.ReadToEnd();  
                     }
+                    rawChecklist = SanitizeData(rawChecklist);
                     // create the new record
                     Artifact newArtifact = MakeArtifactRecord(system, rawChecklist);
                     // grab the user/system ID from the token if there which is *should* always be
@@ -81,6 +82,7 @@ namespace openrmf_upload_api.Controllers
               {
                   rawChecklist = reader.ReadToEnd();  
               }
+              rawChecklist = SanitizeData(rawChecklist);
               // update and fill in the same info
               Artifact newArtifact = MakeArtifactRecord(system, rawChecklist);
               Artifact oldArtifact = await _artifactRepo.GetArtifact(id);
@@ -160,5 +162,8 @@ namespace openrmf_upload_api.Controllers
         return newArtifact;
       }
 
+      private string SanitizeData (string rawdata) {
+        return rawdata.Replace("\t","").Replace(">\n<","><");
+      }
     }
 }
