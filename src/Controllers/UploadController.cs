@@ -5,16 +5,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using System.IO;
 using System.Text;
-using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Cors.Infrastructure;
-using System.Xml.Serialization;
 using System.Xml;
-using Newtonsoft.Json;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using NATS.Client;
+using Microsoft.AspNetCore.Authorization;
 
 using openrmf_upload_api.Data;
 using openrmf_upload_api.Models;
@@ -37,6 +33,7 @@ namespace openrmf_upload_api.Controllers
 
         // POST as new
         [HttpPost]
+        [Authorize(Roles = "Administrator,Editor,Assessor")]
         public async Task<IActionResult> UploadNewChecklist(List<IFormFile> checklistFiles, string system="None")
         {
             try {
@@ -47,10 +44,20 @@ namespace openrmf_upload_api.Controllers
                     {
                         rawChecklist = reader.ReadToEnd();  
                     }
-                    var record = await _artifactRepo.AddArtifact(MakeArtifactRecord(system, rawChecklist));
+                    rawChecklist = SanitizeData(rawChecklist);
+                    // create the new record
+                    Artifact newArtifact = MakeArtifactRecord(system, rawChecklist);
+                    // grab the user/system ID from the token if there which is *should* always be
+                    var claim = this.User.Claims.Where(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier).FirstOrDefault();
+                    if (claim != null) { // get the value
+                      newArtifact.createdBy = Guid.Parse(claim.Value);
+                    }
+                    // save it to the database
+                    var record = await _artifactRepo.AddArtifact(newArtifact);
 
                     // publish to the openrmf save new realm the new ID we can use
-                    _msgServer.Publish("openrmf.save.new", Encoding.UTF8.GetBytes(record.InternalId.ToString()));
+                    _msgServer.Publish("openrmf.checklist.save.new", Encoding.UTF8.GetBytes(record.InternalId.ToString()));
+                    _msgServer.Flush();
                   }
                   return Ok();
                 }
@@ -65,6 +72,7 @@ namespace openrmf_upload_api.Controllers
 
         // PUT as update
         [HttpPut("{id}")]
+        [Authorize(Roles = "Administrator,Editor,Assessor")]
         public async Task<IActionResult> UpdateChecklist(string id, IFormFile checklistFile, string system="None")
         {
           try {
@@ -74,11 +82,26 @@ namespace openrmf_upload_api.Controllers
               {
                   rawChecklist = reader.ReadToEnd();  
               }
+              rawChecklist = SanitizeData(rawChecklist);
               // update and fill in the same info
-              await _artifactRepo.UpdateArtifact(id, MakeArtifactRecord(system, rawChecklist));
-              // publish to the openrmf save new realm the new ID we can use
-              _msgServer.Publish("openrmf.save.update", Encoding.UTF8.GetBytes(id));
+              Artifact newArtifact = MakeArtifactRecord(system, rawChecklist);
+              Artifact oldArtifact = await _artifactRepo.GetArtifact(id);
+              if (oldArtifact != null && oldArtifact.createdBy != Guid.Empty){
+                // this is an update of an older one, keep the createdBy intact
+                newArtifact.createdBy = oldArtifact.createdBy;
+              }
+              oldArtifact = null;
 
+              // grab the user/system ID from the token if there which is *should* always be
+              var claim = this.User.Claims.Where(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier).FirstOrDefault();
+              if (claim != null) { // get the value
+                newArtifact.updatedBy = Guid.Parse(claim.Value);
+              }
+
+              await _artifactRepo.UpdateArtifact(id, newArtifact);
+              // publish to the openrmf save new realm the new ID we can use
+              _msgServer.Publish("openrmf.checklist.save.update", Encoding.UTF8.GetBytes(id));
+              _msgServer.Flush();
               return Ok();
           }
           catch (Exception ex) {
@@ -139,5 +162,8 @@ namespace openrmf_upload_api.Controllers
         return newArtifact;
       }
 
+      private string SanitizeData (string rawdata) {
+        return rawdata.Replace("\t","").Replace(">\n<","><");
+      }
     }
 }
