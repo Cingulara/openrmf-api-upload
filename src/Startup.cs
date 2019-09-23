@@ -1,18 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Swashbuckle.AspNetCore.Swagger;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 
 using openrmf_upload_api.Models;
 using openrmf_upload_api.Data;
@@ -36,13 +31,13 @@ namespace openrmf_upload_api
 
             services.Configure<Settings>(options =>
             {
-                options.ConnectionString = Environment.GetEnvironmentVariable("mongoConnection");
-                options.Database = Environment.GetEnvironmentVariable("mongodb");
+                options.ConnectionString = Environment.GetEnvironmentVariable("MONGODBCONNECTION");
+                options.Database = Environment.GetEnvironmentVariable("MONGODB");
             });
             
             // Create a new connection factory to create a connection.
             ConnectionFactory cf = new ConnectionFactory();
-            IConnection conn = cf.CreateConnection(Environment.GetEnvironmentVariable("natsserverurl"));
+            IConnection conn = cf.CreateConnection(Environment.GetEnvironmentVariable("NATSSERVERURL"));
             // setup the NATS server
             services.Configure<NATSServer>(options =>
             {
@@ -54,14 +49,55 @@ namespace openrmf_upload_api
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Info { Title = "openRMF Upload API", Version = "v1", 
-                    Description = "The Upload API that goes with the openRMF tool",
+                c.SwaggerDoc("v1", new Info { Title = "OpenRMF Upload API", Version = "v1", 
+                    Description = "The Upload API that goes with the OpenRMF tool",
                     Contact = new Contact
                     {
                         Name = "Dale Bingham",
                         Email = "dale.bingham@cingulara.com",
                         Url = "https://github.com/Cingulara/openrmf-api-upload"
                     } });
+            });
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(o =>
+            {
+                o.Authority = Environment.GetEnvironmentVariable("JWT-AUTHORITY");
+                o.Audience = Environment.GetEnvironmentVariable("JWT-CLIENT");
+                o.IncludeErrorDetails = true;
+                o.RequireHttpsMetadata = false;
+                o.TokenValidationParameters = new TokenValidationParameters()
+                {
+                    ValidateAudience = false,
+                    ValidateIssuerSigningKey = true,
+                    ValidateIssuer = true,
+                    ValidIssuer = Environment.GetEnvironmentVariable("JWT-AUTHORITY"),
+                    ValidateLifetime = true
+                };
+
+                o.Events = new JwtBearerEvents()
+                {
+                    OnAuthenticationFailed = c =>
+                    {
+                        c.NoResult();
+                        c.Response.StatusCode = 401;
+                        c.Response.ContentType = "text/plain";
+
+                        return c.Response.WriteAsync(c.Exception.ToString());
+                    }
+                };
+            });
+
+            // setup the RBAC for this
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("Administrator", policy => policy.RequireRole("roles", "[Administrator]"));
+                options.AddPolicy("Editor", policy => policy.RequireRole("roles", "[Editor]"));
+                options.AddPolicy("Reader", policy => policy.RequireRole("roles", "[Reader]"));
+                options.AddPolicy("Assessor", policy => policy.RequireRole("roles", "[Assessor]"));
             });
 
             // ********************
@@ -104,14 +140,14 @@ namespace openrmf_upload_api
             // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), specifying the Swagger JSON endpoint.
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "openRMF Upload API V1");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "OpenRMF Upload API V1");
             });
 
             // ********************
             // USE CORS
             // ********************
             app.UseCors("AllowAll");
-
+            app.UseAuthentication();
             app.UseHttpsRedirection();
             app.UseMvc();
         }
