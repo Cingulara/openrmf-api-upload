@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using openrmf_upload_api.Models;
+using openrmf_upload_api.Classes;
 using System.IO;
 using System.Text;
 using System.Xml.Serialization;
@@ -19,7 +19,6 @@ namespace openrmf_upload_api.Models
 
     public static class SCAPScanResultLoader
     {
-
         public static SCAPRuleResultSet LoadSCAPScan(string xmlfile) {
             SCAPRuleResultSet results = new SCAPRuleResultSet();
             // get the title of the SCAP scan we are using, which correlates to the Checklist
@@ -67,11 +66,44 @@ namespace openrmf_upload_api.Models
         }
 
         public static string GenerateChecklistData(SCAPRuleResultSet results) {
-            string checklistString = "";
-            // generate the checklist
-
+            string checklistString = NATSClient.GetArtifactByTemplateTitle(results.title);
+            // generate the checklist from reading the template in using a Request/Reply to openrmf.template.read
+            if (!string.IsNullOrEmpty(checklistString)) {
+                // process the raw checklist into the CHECKLIST structure
+                CHECKLIST chk = ChecklistLoader.LoadChecklist(checklistString);
+                STIG_DATA data;
+                SCAPRuleResult result;
+                if (chk != null) {
+                    // for each VULN see if there is a rule matching the rule in the 
+                    foreach (VULN v in chk.STIGS.iSTIG.VULN) {
+                        data = v.STIG_DATA.Where(y => y.VULN_ATTRIBUTE == "Rule_ID").FirstOrDefault();
+                        if (data != null) {
+                            // find if there is a matching rule
+                            result = results.ruleResults.Where(z => z.ruleId.ToLower() == data.ATTRIBUTE_DATA.ToLower()).FirstOrDefault();
+                            if (result != null) {
+                                // set the status
+                                if (result.result.ToLower() == "fail") {
+                                    v.STATUS = "Open";
+                                } 
+                                else if (result.result.ToLower() == "pass") {
+                                    v.STATUS = "NotAFinding";
+                                }
+                            }
+                        }
+                    }
+                }
+                System.Xml.Serialization.XmlSerializer xmlSerializer = new System.Xml.Serialization.XmlSerializer(chk.GetType());
+                using(StringWriter textWriter = new StringWriter())                
+                {
+                    xmlSerializer.Serialize(textWriter, chk);
+                    checklistString = textWriter.ToString();
+                }
+            }
+            // strip out all the extra formatting crap
+            System.Xml.Linq.XDocument xDoc = System.Xml.Linq.XDocument.Parse(checklistString, System.Xml.Linq.LoadOptions.None);
+            checklistString = xDoc.ToString(System.Xml.Linq.SaveOptions.DisableFormatting);
+            // return the string
             return checklistString;
         }
-
     }
 }

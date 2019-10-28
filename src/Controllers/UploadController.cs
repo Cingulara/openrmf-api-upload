@@ -49,7 +49,6 @@ namespace openrmf_upload_api.Controllers
                         string xmlfile = reader.ReadToEnd();
                         // pull out the rule IDs and their results of pass or fail and the title/type of SCAP scan done
                         SCAPRuleResultSet results = SCAPScanResultLoader.LoadSCAPScan(xmlfile);
-                        // load into a proper checklist based on the title
                         // get the rawChecklist data so we can move on
                         rawChecklist = SCAPScanResultLoader.GenerateChecklistData(results);
                       }
@@ -68,7 +67,7 @@ namespace openrmf_upload_api.Controllers
 
                     // clean up any odd data that can mess us up moving around, via JS, and such
                     rawChecklist = SanitizeData(rawChecklist);
-                    // create the new record for saving into the
+                    // create the new record for saving into the DB
                     Artifact newArtifact = MakeArtifactRecord(system, rawChecklist);
                     // grab the user/system ID from the token if there which is *should* always be
                     var claim = this.User.Claims.Where(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier).FirstOrDefault();
