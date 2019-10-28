@@ -26,20 +26,34 @@ namespace openrmf_upload_api.Models
             XmlDocument xmlDoc = new XmlDocument();
             xmlDoc.LoadXml(xmlfile);
 
+            // get the template title from the SCAP to use to grab an empty Checklist
             XmlNodeList title = xmlDoc.GetElementsByTagName("cdf:title");
             if (title != null && title.Count > 0 && title.Item(0).FirstChild != null) {
                 // get the title of the STIG so we can ask for the checklist later to fill in
                 results.title = title.Item(0).FirstChild.InnerText;
             }
+
+            // get the hostname and other facts off the computer that was SCAP scanned
+            XmlNodeList targetFacts = xmlDoc.GetElementsByTagName("cdf:fact");
+            if (targetFacts != null && targetFacts.Count > 0 && title.Item(0).FirstChild != null) {
+                foreach (XmlNode node in targetFacts) {
+                    if (node.Attributes.Count > 1 && node.Attributes[1].InnerText.EndsWith("host_name")) {
+                        // grab the Node's InnerText
+                        results.hostname = node.InnerText;
+                        break; // we found it
+                    }
+                }
+            }
+
             // get all the rules and their pass/fail results
             XmlNodeList ruleResults = xmlDoc.GetElementsByTagName("cdf:rule-result");
             if (ruleResults != null && ruleResults.Count > 0 && ruleResults.Item(0).FirstChild != null) {
-                results.ruleResults = getResultsListing(ruleResults);
+                results.ruleResults = GetResultsListing(ruleResults);
             }
             return results;
         }
 
-        private static List<SCAPRuleResult> getResultsListing(XmlNodeList nodes) {
+        private static List<SCAPRuleResult> GetResultsListing(XmlNodeList nodes) {
             List<SCAPRuleResult> ruleResults = new List<SCAPRuleResult>();
             SCAPRuleResult result;
             
@@ -74,6 +88,10 @@ namespace openrmf_upload_api.Models
                 STIG_DATA data;
                 SCAPRuleResult result;
                 if (chk != null) {
+                    // if we read in the hostname, then use it in the Checklist data
+                    if (!string.IsNullOrEmpty(results.hostname)) {
+                        chk.ASSET.HOST_NAME = results.hostname;
+                    }
                     // for each VULN see if there is a rule matching the rule in the 
                     foreach (VULN v in chk.STIGS.iSTIG.VULN) {
                         data = v.STIG_DATA.Where(y => y.VULN_ATTRIBUTE == "Rule_ID").FirstOrDefault();
