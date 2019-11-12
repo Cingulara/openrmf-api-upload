@@ -40,12 +40,34 @@ namespace openrmf_upload_api.Controllers
                 if (checklistFiles.Count > 0) {
                   foreach(IFormFile file in checklistFiles) {
                     string rawChecklist =  string.Empty;
-                    using (var reader = new StreamReader(file.OpenReadStream()))
-                    {
-                        rawChecklist = reader.ReadToEnd();  
+
+                    if (file.FileName.ToLower().EndsWith(".xml")) {
+                      // if an XML XCCDF SCAP scan file
+                      using (var reader = new StreamReader(file.OpenReadStream()))
+                      {
+                        // read in the file
+                        string xmlfile = reader.ReadToEnd();
+                        // pull out the rule IDs and their results of pass or fail and the title/type of SCAP scan done
+                        SCAPRuleResultSet results = SCAPScanResultLoader.LoadSCAPScan(xmlfile);
+                        // get the rawChecklist data so we can move on
+                        rawChecklist = SCAPScanResultLoader.GenerateChecklistData(results);
+                      }
                     }
+                    else if (file.FileName.ToLower().EndsWith(".ckl")) {
+                      // if a CKL file
+                      using (var reader = new StreamReader(file.OpenReadStream()))
+                      {
+                          rawChecklist = reader.ReadToEnd();  
+                      }
+                    }
+                    else {
+                      // log this is a bad file
+                      return BadRequest();
+                    }
+
+                    // clean up any odd data that can mess us up moving around, via JS, and such
                     rawChecklist = SanitizeData(rawChecklist);
-                    // create the new record
+                    // create the new record for saving into the DB
                     Artifact newArtifact = MakeArtifactRecord(system, rawChecklist);
                     // grab the user/system ID from the token if there which is *should* always be
                     var claim = this.User.Claims.Where(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier).FirstOrDefault();
