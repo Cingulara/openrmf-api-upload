@@ -38,6 +38,7 @@ namespace openrmf_upload_api.Data {
 
             return internalId;
         }
+        
         // query after Id or InternalId (BSonId value)
         //
         public async Task<Artifact> GetArtifact(string id)

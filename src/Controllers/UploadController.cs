@@ -51,7 +51,7 @@ namespace openrmf_upload_api.Controllers
                         SCAPRuleResultSet results = SCAPScanResultLoader.LoadSCAPScan(xmlfile);
                         // get the rawChecklist data so we can move on
                         // generate a new checklist from a template based on the type and revision
-                        rawChecklist = SCAPScanResultLoader.GenerateChecklistData(results, true);
+                        rawChecklist = SCAPScanResultLoader.GenerateChecklistData(results);
                       }
                     }
                     else if (file.FileName.ToLower().EndsWith(".ckl")) {
@@ -111,7 +111,8 @@ namespace openrmf_upload_api.Controllers
                   SCAPRuleResultSet results = SCAPScanResultLoader.LoadSCAPScan(xmlfile);
                   // get the raw checklist from the msg checklist NATS reader                  
                   // update the rawChecklist data so we can move on
-                  rawChecklist = SCAPScanResultLoader.GenerateChecklistData(results, false);
+                  var record = await _artifactRepo.GetArtifact(id);
+                  rawChecklist = SCAPScanResultLoader.UpdateChecklistData(results, record.rawChecklist, false);
                 }
               }
               else if (checklistFile.FileName.ToLower().EndsWith(".ckl")) {

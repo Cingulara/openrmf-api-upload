@@ -80,62 +80,68 @@ namespace openrmf_upload_api.Models
         }
         
         /// <summary>
-        /// Return a checklist raw string based on the SCAP XML file results. You pass in 'true' to generate a new
-        /// checklist and it fills in a SYSTEM template. Otherwise it pulls the existing checklist and updates it.
+        /// Return a checklist raw string based on the SCAP XML file results. 
         /// </summary>
         /// <param name="results">The results list of pass and fail information rules from the SCAP scan</param>
-        /// <param name="newChecklist">True/False: is this to generate a new checklist or not (update)</param>
         /// <returns>A checklist raw XML string, if found</returns>
-        public static string GenerateChecklistData(SCAPRuleResultSet results, bool newChecklist) {
-            string checklistString = "";
-            if (newChecklist) 
-                checklistString = NATSClient.GetArtifactByTemplateTitle(results.title);
-            else // from an existing checklist
-                checklistString = NATSClient.GetArtifactByTemplateTitle(results.title);
+        public static string GenerateChecklistData(SCAPRuleResultSet results) {
+            string checklistString = NATSClient.GetArtifactByTemplateTitle(results.title);
 
             // generate the checklist from reading the template in using a Request/Reply to openrmf.template.read
             if (!string.IsNullOrEmpty(checklistString)) {
-                // process the raw checklist into the CHECKLIST structure
-                CHECKLIST chk = ChecklistLoader.LoadChecklist(checklistString);
-                STIG_DATA data;
-                SCAPRuleResult result;
-                if (chk != null) {
-                    // if we read in the hostname, then use it in the Checklist data
-                    if (!string.IsNullOrEmpty(results.hostname)) {
-                        chk.ASSET.HOST_NAME = results.hostname;
-                    }
-                    // for each VULN see if there is a rule matching the rule in the 
-                    foreach (VULN v in chk.STIGS.iSTIG.VULN) {
-                        data = v.STIG_DATA.Where(y => y.VULN_ATTRIBUTE == "Rule_ID").FirstOrDefault();
-                        if (data != null) {
-                            // find if there is a matching rule
-                            result = results.ruleResults.Where(z => z.ruleId.ToLower() == data.ATTRIBUTE_DATA.ToLower()).FirstOrDefault();
-                            if (result != null) {
-                                // set the status
-                                // only mark fails IF this is a new one, otherwise leave alone
-                                if (result.result.ToLower() == "fail" && newChecklist) {
-                                    v.STATUS = "Open";
-                                } 
-                                // mark the pass on any checklist item we find that passed
-                                else if (result.result.ToLower() == "pass") {
-                                    v.STATUS = "NotAFinding";
-                                }
+                return UpdateChecklistData(results, checklistString, true);
+            }            
+            // return the default template string
+            return checklistString;
+        }
+
+        /// <summary>
+        /// Return a checklist raw string based on the SCAP XML file results of an existing checklist file.
+        /// </summary>
+        /// <param name="results">The results list of pass and fail information rules from the SCAP scan</param>
+        /// <param name="checklistString">The raw XML of the checklist</param>
+        /// <param name="newChecklist">True/False on a new checklist (template). If true, add pass and fail items.</param>
+        /// <returns>A checklist raw XML string, if found</returns>
+        public static string UpdateChecklistData(SCAPRuleResultSet results, string checklistString, bool newChecklist) {
+            // process the raw checklist into the CHECKLIST structure
+            CHECKLIST chk = ChecklistLoader.LoadChecklist(checklistString);
+            STIG_DATA data;
+            SCAPRuleResult result;
+            if (chk != null) {
+                // if we read in the hostname, then use it in the Checklist data
+                if (!string.IsNullOrEmpty(results.hostname)) {
+                    chk.ASSET.HOST_NAME = results.hostname;
+                }
+                // for each VULN see if there is a rule matching the rule in the 
+                foreach (VULN v in chk.STIGS.iSTIG.VULN) {
+                    data = v.STIG_DATA.Where(y => y.VULN_ATTRIBUTE == "Rule_ID").FirstOrDefault();
+                    if (data != null) {
+                        // find if there is a matching rule
+                        result = results.ruleResults.Where(z => z.ruleId.ToLower() == data.ATTRIBUTE_DATA.ToLower()).FirstOrDefault();
+                        if (result != null) {
+                            // set the status
+                            // only mark fails IF this is a new one, otherwise leave alone
+                            if (result.result.ToLower() == "fail" && newChecklist) {
+                                v.STATUS = "Open";
+                            } 
+                            // mark the pass on any checklist item we find that passed
+                            else if (result.result.ToLower() == "pass") {
+                                v.STATUS = "NotAFinding";
                             }
                         }
                     }
                 }
-                // serialize into a string again
-                System.Xml.Serialization.XmlSerializer xmlSerializer = new System.Xml.Serialization.XmlSerializer(chk.GetType());
-                using(StringWriter textWriter = new StringWriter())                
-                {
-                    xmlSerializer.Serialize(textWriter, chk);
-                    checklistString = textWriter.ToString();
-                }
+            }
+            // serialize into a string again
+            System.Xml.Serialization.XmlSerializer xmlSerializer = new System.Xml.Serialization.XmlSerializer(chk.GetType());
+            using(StringWriter textWriter = new StringWriter())                
+            {
+                xmlSerializer.Serialize(textWriter, chk);
+                checklistString = textWriter.ToString();
             }
             // strip out all the extra formatting crap and clean up the XML to be as simple as possible
             System.Xml.Linq.XDocument xDoc = System.Xml.Linq.XDocument.Parse(checklistString, System.Xml.Linq.LoadOptions.None);
             checklistString = xDoc.ToString(System.Xml.Linq.SaveOptions.DisableFormatting);
-            // return the string with all the new settings to save and act on
             return checklistString;
         }
     }
