@@ -50,7 +50,8 @@ namespace openrmf_upload_api.Controllers
                         // pull out the rule IDs and their results of pass or fail and the title/type of SCAP scan done
                         SCAPRuleResultSet results = SCAPScanResultLoader.LoadSCAPScan(xmlfile);
                         // get the rawChecklist data so we can move on
-                        rawChecklist = SCAPScanResultLoader.GenerateChecklistData(results);
+                        // generate a new checklist from a template based on the type and revision
+                        rawChecklist = SCAPScanResultLoader.GenerateChecklistData(results, true);
                       }
                     }
                     else if (file.FileName.ToLower().EndsWith(".ckl")) {
@@ -100,10 +101,31 @@ namespace openrmf_upload_api.Controllers
           try {
               var name = checklistFile.FileName;
               string rawChecklist =  string.Empty;
-              using (var reader = new StreamReader(checklistFile.OpenReadStream()))
-              {
-                  rawChecklist = reader.ReadToEnd();  
+              if (checklistFile.FileName.ToLower().EndsWith(".xml")) {
+                // if an XML XCCDF SCAP scan checklistFile
+                using (var reader = new StreamReader(checklistFile.OpenReadStream()))
+                {
+                  // read in the checklistFile
+                  string xmlfile = reader.ReadToEnd();
+                  // pull out the rule IDs and their results of pass or fail and the title/type of SCAP scan done
+                  SCAPRuleResultSet results = SCAPScanResultLoader.LoadSCAPScan(xmlfile);
+                  // get the raw checklist from the msg checklist NATS reader                  
+                  // update the rawChecklist data so we can move on
+                  rawChecklist = SCAPScanResultLoader.GenerateChecklistData(results, false);
+                }
               }
+              else if (checklistFile.FileName.ToLower().EndsWith(".ckl")) {
+                // if a CKL file
+                using (var reader = new StreamReader(checklistFile.OpenReadStream()))
+                {
+                    rawChecklist = reader.ReadToEnd();  
+                }
+              }
+              else {
+                // log this is a bad checklistFile
+                return BadRequest();
+              }
+
               rawChecklist = SanitizeData(rawChecklist);
               // update and fill in the same info
               Artifact newArtifact = MakeArtifactRecord(system, rawChecklist);
