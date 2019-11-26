@@ -13,9 +13,9 @@ namespace openrmf_upload_api.Models
         public DateTime created { get; set; }
         public string rawChecklist { get; set; }
 
-        // if this is part of a system, list that system.
-        // if empty this is just a standalone checklist
-        public string system { get; set; }
+        // if this is part of a system, list that system group ID here
+        public string systemGroupId { get; set; }
+        public string systemTitle { get; set; }
         public string hostName { get; set;}
         public string stigType { get; set; }
         public string stigRelease { get; set; }

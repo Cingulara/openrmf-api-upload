@@ -21,82 +21,131 @@ namespace openrmf_upload_api.Controllers
     public class UploadController : Controller
     {
 	    private readonly IArtifactRepository _artifactRepo;
-        private readonly ILogger<UploadController> _logger;
-        private readonly IConnection _msgServer;
+	    private readonly ISystemGroupRepository _systemRepo;
+      private readonly ILogger<UploadController> _logger;
+      private readonly IConnection _msgServer;
 
-        public UploadController(IArtifactRepository artifactRepo, ILogger<UploadController> logger, IOptions<NATSServer> msgServer)
+        public UploadController(IArtifactRepository artifactRepo, ILogger<UploadController> logger, IOptions<NATSServer> msgServer, ISystemGroupRepository systemRepo )
         {
             _logger = logger;
             _artifactRepo = artifactRepo;
+            _systemRepo = systemRepo;
             _msgServer = msgServer.Value.connection;
         }
 
         // POST as new
         [HttpPost]
         [Authorize(Roles = "Administrator,Editor,Assessor")]
-        public async Task<IActionResult> UploadNewChecklist(List<IFormFile> checklistFiles, string system="None")
+        public async Task<IActionResult> UploadNewChecklist(List<IFormFile> checklistFiles, string systemGroupId, string system="None")
         {
-            try {
-                if (checklistFiles.Count > 0) {
-                  foreach(IFormFile file in checklistFiles) {
-                    string rawChecklist =  string.Empty;
+          try {
+            if (checklistFiles.Count > 0) {
 
-                    if (file.FileName.ToLower().EndsWith(".xml")) {
-                      // if an XML XCCDF SCAP scan file
-                      using (var reader = new StreamReader(file.OpenReadStream()))
-                      {
-                        // read in the file
-                        string xmlfile = reader.ReadToEnd();
-                        // pull out the rule IDs and their results of pass or fail and the title/type of SCAP scan done
-                        SCAPRuleResultSet results = SCAPScanResultLoader.LoadSCAPScan(xmlfile);
-                        // get the rawChecklist data so we can move on
-                        // generate a new checklist from a template based on the type and revision
-                        rawChecklist = SCAPScanResultLoader.GenerateChecklistData(results);
-                      }
-                    }
-                    else if (file.FileName.ToLower().EndsWith(".ckl")) {
-                      // if a CKL file
-                      using (var reader = new StreamReader(file.OpenReadStream()))
-                      {
-                          rawChecklist = reader.ReadToEnd();  
-                      }
-                    }
-                    else {
-                      // log this is a bad file
-                      return BadRequest();
-                    }
+              // grab the user/system ID from the token if there which is *should* always be
+              var claim = this.User.Claims.Where(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier).FirstOrDefault();
+              // make sure the SYSTEM GROUP is valid here and then add the files...
+              SystemGroup sg;
+              SystemGroup recordSystem = null;
 
-                    // clean up any odd data that can mess us up moving around, via JS, and such
-                    rawChecklist = SanitizeData(rawChecklist);
-                    // create the new record for saving into the DB
-                    Artifact newArtifact = MakeArtifactRecord(system, rawChecklist);
-                    // grab the user/system ID from the token if there which is *should* always be
-                    var claim = this.User.Claims.Where(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier).FirstOrDefault();
-                    if (claim != null) { // get the value
-                      newArtifact.createdBy = Guid.Parse(claim.Value);
-                    }
-                    // save it to the database
-                    var record = await _artifactRepo.AddArtifact(newArtifact);
-
-                    // publish to the openrmf save new realm the new ID we can use
-                    _msgServer.Publish("openrmf.checklist.save.new", Encoding.UTF8.GetBytes(record.InternalId.ToString()));
-                    _msgServer.Flush();
-                  }
-                  return Ok();
+              if (string.IsNullOrEmpty(systemGroupId)) {
+                sg = new SystemGroup();
+                sg.title = system;
+                sg.created = DateTime.Now;
+                if (claim != null && claim.Value != null) {
+                  sg.createdBy = Guid.Parse(claim.Value);
                 }
-                else
-                    return BadRequest();
+                recordSystem = _systemRepo.AddSystemGroup(sg).GetAwaiter().GetResult();
+              } else {
+                sg = await _systemRepo.GetSystemGroup(systemGroupId);
+                if (sg == null) {
+                  sg = new SystemGroup();
+                  sg.title = "None";
+                  sg.created = DateTime.Now;
+                  if (claim != null && claim.Value != null) {
+                    sg.createdBy = Guid.Parse(claim.Value);
+                  }
+                recordSystem = _systemRepo.AddSystemGroup(sg).GetAwaiter().GetResult();
+                }
+                else {
+                  sg.updatedOn = DateTime.Now;
+                  if (claim != null && claim.Value != null) {
+                    sg.updatedBy = Guid.Parse(claim.Value);
+                  }
+                  var updated = _systemRepo.UpdateSystemGroup(systemGroupId, sg).GetAwaiter().GetResult();
+                }
+              }
+
+              // now go through the Checklists and set them up
+              foreach(IFormFile file in checklistFiles) {
+                string rawChecklist =  string.Empty;
+
+                if (file.FileName.ToLower().EndsWith(".xml")) {
+                  // if an XML XCCDF SCAP scan file
+                  using (var reader = new StreamReader(file.OpenReadStream()))
+                  {
+                    // read in the file
+                    string xmlfile = reader.ReadToEnd();
+                    // pull out the rule IDs and their results of pass or fail and the title/type of SCAP scan done
+                    SCAPRuleResultSet results = SCAPScanResultLoader.LoadSCAPScan(xmlfile);
+                    // get the rawChecklist data so we can move on
+                    // generate a new checklist from a template based on the type and revision
+                    rawChecklist = SCAPScanResultLoader.GenerateChecklistData(results);
+                  }
+                }
+                else if (file.FileName.ToLower().EndsWith(".ckl")) {
+                  // if a CKL file
+                  using (var reader = new StreamReader(file.OpenReadStream()))
+                  {
+                      rawChecklist = reader.ReadToEnd();  
+                  }
+                }
+                else {
+                  // log this is a bad file
+                  return BadRequest();
+                }
+
+                // clean up any odd data that can mess us up moving around, via JS, and such
+                rawChecklist = SanitizeData(rawChecklist);
+
+                // create the new record for saving into the DB
+                Artifact newArtifact = MakeArtifactRecord(rawChecklist);
+
+                if (claim != null) { // get the value
+                  newArtifact.createdBy = Guid.Parse(claim.Value);
+                  if (sg.createdBy == Guid.Empty)
+                    sg.createdBy = Guid.Parse(claim.Value);
+                  else 
+                    sg.updatedBy = Guid.Parse(claim.Value);
+                }
+
+                // add the system record ID to the Artifact to know how to query it
+                if (recordSystem != null) {
+                  newArtifact.systemGroupId = recordSystem.InternalId.ToString();
+                  // store the title for ease of use
+                  newArtifact.systemTitle = recordSystem.title;
+                }
+                // save the artifact record and checklist to the database
+                var record = await _artifactRepo.AddArtifact(newArtifact);
+
+                // publish to the openrmf save new realm the new ID we can use
+                _msgServer.Publish("openrmf.checklist.save.new", Encoding.UTF8.GetBytes(record.InternalId.ToString()));
+                _msgServer.Flush();
+              }
+              return Ok();
             }
-            catch (Exception ex) {
-                _logger.LogError(ex, "Error uploading checklist file");
+            else
                 return BadRequest();
-            }
+          }
+          catch (Exception ex) {
+              _logger.LogError(ex, "Error uploading checklist file");
+              return BadRequest();
+          }
         }
 
         // PUT as update
         [HttpPut("{id}")]
         [Authorize(Roles = "Administrator,Editor,Assessor")]
-        public async Task<IActionResult> UpdateChecklist(string id, IFormFile checklistFile, string system="None")
+        public async Task<IActionResult> UpdateChecklist(string id, IFormFile checklistFile, string systemGroupId)
         {
           try {
               var name = checklistFile.FileName;
@@ -129,11 +178,16 @@ namespace openrmf_upload_api.Controllers
 
               rawChecklist = SanitizeData(rawChecklist);
               // update and fill in the same info
-              Artifact newArtifact = MakeArtifactRecord(system, rawChecklist);
+              Artifact newArtifact = MakeArtifactRecord(rawChecklist);
               Artifact oldArtifact = await _artifactRepo.GetArtifact(id);
               if (oldArtifact != null && oldArtifact.createdBy != Guid.Empty){
                 // this is an update of an older one, keep the createdBy intact
                 newArtifact.createdBy = oldArtifact.createdBy;
+                // keep it a part of the same system group
+                if (!string.IsNullOrEmpty(oldArtifact.systemGroupId)) {
+                  newArtifact.systemGroupId = oldArtifact.systemGroupId;
+                  newArtifact.systemTitle = oldArtifact.systemTitle;
+                }
               }
               oldArtifact = null;
 
@@ -156,9 +210,8 @@ namespace openrmf_upload_api.Controllers
       }
       
       // this parses the text and system, generates the pieces, and returns the artifact to save
-      private Artifact MakeArtifactRecord(string system, string rawChecklist) {
+      private Artifact MakeArtifactRecord(string rawChecklist) {
         Artifact newArtifact = new Artifact();
-        newArtifact.system = system;
         newArtifact.created = DateTime.Now;
         newArtifact.updatedOn = DateTime.Now;
         newArtifact.rawChecklist = rawChecklist;

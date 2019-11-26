@@ -45,6 +45,7 @@ namespace openrmf_upload_api
             });
 
             services.AddTransient<IArtifactRepository, ArtifactRepository>();
+            services.AddTransient<ISystemGroupRepository, SystemGroupRepository>();
 
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(c =>
