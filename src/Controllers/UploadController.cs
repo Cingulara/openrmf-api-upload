@@ -124,11 +124,18 @@ namespace openrmf_upload_api.Controllers
                   // store the title for ease of use
                   newArtifact.systemTitle = recordSystem.title;
                 }
+                else {
+                  newArtifact.systemGroupId = sg.InternalId.ToString();
+                  // store the title for ease of use
+                  newArtifact.systemTitle = sg.title;
+                }
                 // save the artifact record and checklist to the database
                 var record = await _artifactRepo.AddArtifact(newArtifact);
 
                 // publish to the openrmf save new realm the new ID we can use
                 _msgServer.Publish("openrmf.checklist.save.new", Encoding.UTF8.GetBytes(record.InternalId.ToString()));
+                // publish to update the system checklist count
+                _msgServer.Publish("openrmf.system.count.add", Encoding.UTF8.GetBytes(record.systemGroupId));
                 _msgServer.Flush();
               }
               return Ok();
