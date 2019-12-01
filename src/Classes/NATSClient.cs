@@ -19,11 +19,41 @@ namespace openrmf_upload_api.Classes
         public static string GetArtifactByTemplateTitle(string title)
         {
             string rawChecklist = "";
+            
             // Create a new connection factory to create a connection.
             ConnectionFactory cf = new ConnectionFactory();
+            // add the options for the server, reconnecting, and the handler events
+            Options opts = ConnectionFactory.GetDefaultOptions();
+            opts.MaxReconnect = -1;
+            opts.ReconnectWait = 1000;
+            opts.Url = Environment.GetEnvironmentVariable("NATSSERVERURL");
+            opts.AsyncErrorEventHandler += (sender, events) =>
+            {
+                Console.WriteLine(string.Format("NATS client error. Server: {0}. Message: {1}. Subject: {2}", events.Conn.ConnectedUrl, events.Error, events.Subscription.Subject));
+            };
 
-            // Creates a live connection to the default NATS Server running locally
-            IConnection c = cf.CreateConnection(Environment.GetEnvironmentVariable("NATSSERVERURL"));
+            opts.ServerDiscoveredEventHandler += (sender, events) =>
+            {
+                Console.WriteLine(string.Format("A new server has joined the cluster: {0}", events.Conn.DiscoveredServers));
+            };
+
+            opts.ClosedEventHandler += (sender, events) =>
+            {
+                Console.WriteLine(string.Format("Connection Closed: {0}", events.Conn.ConnectedUrl));
+            };
+
+            opts.ReconnectedEventHandler += (sender, events) =>
+            {
+                Console.WriteLine(string.Format("Connection Reconnected: {0}", events.Conn.ConnectedUrl));
+            };
+
+            opts.DisconnectedEventHandler += (sender, events) =>
+            {
+                Console.WriteLine(string.Format("Connection Disconnected: {0}", events.Conn.ConnectedUrl));
+            };
+            
+            // Creates a live connection to the NATS Server with the above options
+            IConnection c = cf.CreateConnection(opts);
 
             Msg reply = c.Request("openrmf.template.read", Encoding.UTF8.GetBytes(title), 3000); // publish to get this Artifact checklist back via ID
             c.Flush();

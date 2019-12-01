@@ -7,20 +7,20 @@ using MongoDB.Bson;
 using Microsoft.Extensions.Options;
 
 namespace openrmf_upload_api.Data {
-    public class ArtifactRepository : IArtifactRepository
+    public class SystemGroupRepository : ISystemGroupRepository
     {
-        private readonly ArtifactContext _context = null;
+        private readonly SystemGroupContext _context = null;
 
-        public ArtifactRepository(IOptions<Settings> settings)
+        public SystemGroupRepository(IOptions<Settings> settings)
         {
-            _context = new ArtifactContext(settings);
+            _context = new SystemGroupContext(settings);
         }
 
-        public async Task<IEnumerable<Artifact>> GetAllArtifacts()
+        public async Task<IEnumerable<SystemGroup>> GetAllSystemGroups()
         {
             try
             {
-                return await _context.Artifacts
+                return await _context.SystemGroups
                         .Find(_ => true).ToListAsync();
             }
             catch (Exception ex)
@@ -41,13 +41,13 @@ namespace openrmf_upload_api.Data {
         
         // query after Id or InternalId (BSonId value)
         //
-        public async Task<Artifact> GetArtifact(string id)
+        public async Task<SystemGroup> GetSystemGroup(string id)
         {
             try
             {
                 ObjectId internalId = GetInternalId(id);
-                return await _context.Artifacts
-                                .Find(artifact => artifact.InternalId == internalId).FirstOrDefaultAsync();
+                return await _context.SystemGroups
+                                .Find(SystemGroup => SystemGroup.InternalId == internalId).FirstOrDefaultAsync();
             }
             catch (Exception ex)
             {
@@ -55,30 +55,12 @@ namespace openrmf_upload_api.Data {
                 throw ex;
             }
         }
-
-        // // query after body text, updated time, and header image size
-        // //
-        // public async Task<IEnumerable<Artifact>> GetArtifact(string bodyText, DateTime updatedFrom, long headerSizeLimit)
-        // {
-        //     try
-        //     {
-        //         var query = _context.Artifacts.Find(artifact => artifact.title.Contains(bodyText) &&
-        //                             artifact.updatedOn >= updatedFrom);
-
-        //         return await query.ToListAsync();
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         // log or manage the exception
-        //         throw ex;
-        //     }
-        // }
         
-        public async Task<Artifact> AddArtifact(Artifact item)
+        public async Task<SystemGroup> AddSystemGroup(SystemGroup item)
         {
             try
             {
-                await _context.Artifacts.InsertOneAsync(item);
+                await _context.SystemGroups.InsertOneAsync(item);
                 return item;
             }
             catch (Exception ex)
@@ -88,13 +70,13 @@ namespace openrmf_upload_api.Data {
             }
         }
 
-        public async Task<bool> RemoveArtifact(string id)
+        public async Task<bool> RemoveSystemGroup(string id)
         {
             try
             {
                 DeleteResult actionResult 
-                    = await _context.Artifacts.DeleteOneAsync(
-                        Builders<Artifact>.Filter.Eq("Id", id));
+                    = await _context.SystemGroups.DeleteOneAsync(
+                        Builders<SystemGroup>.Filter.Eq("Id", id));
 
                 return actionResult.IsAcknowledged 
                     && actionResult.DeletedCount > 0;
@@ -106,13 +88,13 @@ namespace openrmf_upload_api.Data {
             }
         }
 
-        public async Task<bool> UpdateArtifact(string id, Artifact body)
+        public async Task<bool> UpdateSystemGroup(string id, SystemGroup body)
         {
-            var filter = Builders<Artifact>.Filter.Eq(s => s.InternalId, GetInternalId(id));
+            var filter = Builders<SystemGroup>.Filter.Eq(s => s.InternalId, GetInternalId(id));
             try
             {
                 body.InternalId = GetInternalId(id);
-                var actionResult = await _context.Artifacts.ReplaceOneAsync(filter, body);
+                var actionResult = await _context.SystemGroups.ReplaceOneAsync(filter, body);
                 return actionResult.IsAcknowledged && actionResult.ModifiedCount > 0;
             }
             catch (Exception ex)
