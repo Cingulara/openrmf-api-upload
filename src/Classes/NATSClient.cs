@@ -1,11 +1,8 @@
+// Copyright (c) Cingulara 2019. All rights reserved.
+// Licensed under the GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007 license. See LICENSE file in the project root for full license information.
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.IO.Compression;
 using System.Text;
 using NATS.Client;
-using openrmf_upload_api.Models;
-using Newtonsoft.Json;
 
 namespace openrmf_upload_api.Classes
 {
