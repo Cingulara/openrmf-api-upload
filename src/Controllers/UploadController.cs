@@ -35,10 +35,21 @@ namespace openrmf_upload_api.Controllers
             _msgServer = msgServer.Value.connection;
         }
 
-        // POST as new
+        /// <summary>
+        /// POST Called from the OpenRMF UI (or external access) to create one or more checklist/artifact records within a system.
+        /// </summary>
+        /// <param name="checklistFiles">The CKL files to add into the system</param>
+        /// <param name="systemGroupId">The system Id if adding to a current system</param>
+        /// <param name="system">A new System title if creating a new system from checklists</param>
+        /// <returns>
+        /// HTTP Status showing they were created or that there is an error.
+        /// </returns>
+        /// <response code="200">Returns the newly updated item</response>
+        /// <response code="400">If the item did not update correctly</response>
+        /// <response code="404">If the ID passed in is not valid</response>
         [HttpPost]
         [Authorize(Roles = "Administrator,Editor,Assessor")]
-        public async Task<IActionResult> UploadNewChecklist(List<IFormFile> checklistFiles, string systemGroupId, string system="None")
+        public async Task<IActionResult> UploadNewChecklist(List<IFormFile> checklistFiles, string systemGroupId, string system)
         {
           try {
             if (checklistFiles.Count > 0) {
@@ -151,7 +162,19 @@ namespace openrmf_upload_api.Controllers
           }
         }
 
-        // PUT as update
+        /// <summary>
+        /// PUT Called from the OpenRMF UI (or external access) to update a current checklist via a PUT if you 
+        /// have the correct roles in your JWT.
+        /// </summary>
+        /// <param name="id">The ID of the checklist/artifact record to update</param>
+        /// <param name="checklistFile">The actual CKL file uploaded</param>
+        /// <param name="systemGroupId">The System ID</param>
+        /// <returns>
+        /// HTTP Status showing it was updated or that there is an error.
+        /// </returns>
+        /// <response code="200">Returns the newly updated item</response>
+        /// <response code="400">If the item did not update correctly</response>
+        /// <response code="404">If the ID passed in is not valid</response>
         [HttpPut("{id}")]
         [Authorize(Roles = "Administrator,Editor,Assessor")]
         public async Task<IActionResult> UpdateChecklist(string id, IFormFile checklistFile, string systemGroupId)
