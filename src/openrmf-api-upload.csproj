@@ -8,7 +8,7 @@
     <ProjectGuid>{8664114e-ebd6-4413-8490-7a754518dd3d}</ProjectGuid>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
-    <Version>0.10.7</Version>
+    <Version>0.10.8</Version>
     <InformationalVersion>This is a beta of the OpenRMF Tool Upload API from Cingulara</InformationalVersion>
   </PropertyGroup>
 
@@ -30,6 +30,7 @@
     <PackageReference Include="NATS.Client" Version="0.10.0" />
     <PackageReference Include="prometheus-net" Version="3.4.0" />
     <PackageReference Include="prometheus-net.AspNetCore" Version="3.4.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
 
   <ItemGroup>

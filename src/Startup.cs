@@ -164,7 +164,7 @@ namespace openrmf_upload_api
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             // Custom Metrics to count requests for each endpoint and the method
-            var counter = Metrics.CreateCounter("openrmf_path_counter", "Counts requests to OpenRMF endpoints", new CounterConfiguration
+            var counter = Metrics.CreateCounter("openrmf_upload_api_path_counter", "Counts requests to OpenRMF endpoints", new CounterConfiguration
             {
                 LabelNames = new[] { "method", "endpoint" }
             });

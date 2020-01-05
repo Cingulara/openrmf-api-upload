@@ -13,9 +13,11 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using NATS.Client;
 using Microsoft.AspNetCore.Authorization;
+using Newtonsoft.Json;
 
 using openrmf_upload_api.Data;
 using openrmf_upload_api.Models;
+using openrmf_upload_api.Classes;
 
 namespace openrmf_upload_api.Controllers
 {
@@ -160,6 +162,13 @@ namespace openrmf_upload_api.Controllers
                 _logger.LogInformation("UploadNewChecklist() publish a message on a new checklist {0} for updating the count of checklists in the system.", file.FileName.ToLower());
                 _msgServer.Publish("openrmf.system.count.add", Encoding.UTF8.GetBytes(record.systemGroupId));
                 _msgServer.Flush();
+                // publish an audit event
+                _logger.LogInformation("UploadNewChecklist() publish an audit message on a new checklist {0}.", file.FileName.ToLower());
+                Audit newAudit = GenerateAuditMessage(claim, "add checklist");
+                newAudit.message = string.Format("UploadNewChecklist() publish an audit message on a new checklist {0} in system group ({1}) {2}.", file.FileName.ToLower(), sg.InternalId.ToString(), sg.title);
+                newAudit.url = "POST /";
+                _msgServer.Publish("openrmf.audit.upload", Encoding.UTF8.GetBytes(Compression.CompressString(JsonConvert.SerializeObject(newAudit))));
+                _msgServer.Flush();
               }
               _logger.LogInformation("Called UploadNewChecklist() with {0} checklists successfully", checklistFiles.Count.ToString());
               return Ok();
@@ -194,7 +203,7 @@ namespace openrmf_upload_api.Controllers
         {
           try {
               _logger.LogInformation("Calling UpdateChecklist({0})", id);
-              var name = checklistFile.FileName;
+              //var name = checklistFile.FileName;
               string rawChecklist =  string.Empty;
               if (checklistFile.FileName.ToLower().EndsWith(".xml")) {
                 // if an XML XCCDF SCAP scan checklistFile
@@ -253,6 +262,14 @@ namespace openrmf_upload_api.Controllers
               _msgServer.Publish("openrmf.checklist.save.update", Encoding.UTF8.GetBytes(id));
               _msgServer.Flush();
               _logger.LogInformation("Called UpdateChecklist({0}) successfully", id);
+              
+              // publish an audit event
+              _logger.LogInformation("UpdateChecklist() publish an audit message on an updated checklist {0}.", checklistFile.FileName);
+              Audit newAudit = GenerateAuditMessage(claim, "update checklist");
+              newAudit.message = string.Format("UpdateChecklist() publish an audit message on an updated checklist {0} with file {1}.", id, checklistFile.FileName);
+              newAudit.url = "PUT /";
+              _msgServer.Publish("openrmf.audit.upload", Encoding.UTF8.GetBytes(Compression.CompressString(JsonConvert.SerializeObject(newAudit))));
+              _msgServer.Flush();
               return Ok();
           }
           catch (Exception ex) {
@@ -311,9 +328,28 @@ namespace openrmf_upload_api.Controllers
         }
         return newArtifact;
       }
-
       private string SanitizeData (string rawdata) {
         return rawdata.Replace("\t","").Replace(">\n<","><");
+      }
+
+      private Audit GenerateAuditMessage(System.Security.Claims.Claim claim, string action) {
+        Audit audit = new Audit();
+        audit.program = "Upload API";
+        audit.created = DateTime.Now;
+        audit.action = action;
+        if (claim != null) {
+          audit.userid = claim.Value;
+          var fullname = claim.Subject.Claims.Where(x => x.Type == "name").FirstOrDefault();
+          if (fullname != null) 
+            audit.fullname = fullname.Value;
+          var username = claim.Subject.Claims.Where(x => x.Type == "preferred_username").FirstOrDefault();
+          if (username != null) 
+            audit.username = username.Value;
+          var useremail = claim.Subject.Claims.Where(x => x.Type.Contains("emailaddress")).FirstOrDefault();
+          if (useremail != null) 
+            audit.email = useremail.Value;
+        }
+        return audit;
       }
     }
 }
