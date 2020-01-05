@@ -162,10 +162,11 @@ namespace openrmf_upload_api.Controllers
                 _logger.LogInformation("UploadNewChecklist() publish a message on a new checklist {0} for updating the count of checklists in the system.", file.FileName.ToLower());
                 _msgServer.Publish("openrmf.system.count.add", Encoding.UTF8.GetBytes(record.systemGroupId));
                 _msgServer.Flush();
+
                 // publish an audit event
                 _logger.LogInformation("UploadNewChecklist() publish an audit message on a new checklist {0}.", file.FileName.ToLower());
                 Audit newAudit = GenerateAuditMessage(claim, "add checklist");
-                newAudit.message = string.Format("UploadNewChecklist() publish an audit message on a new checklist {0} in system group ({1}) {2}.", file.FileName.ToLower(), sg.InternalId.ToString(), sg.title);
+                newAudit.message = string.Format("UploadNewChecklist() uploaded a new checklist {0} in system group ({1}) {2}.", file.FileName.ToLower(), sg.InternalId.ToString(), sg.title);
                 newAudit.url = "POST /";
                 _msgServer.Publish("openrmf.audit.upload", Encoding.UTF8.GetBytes(Compression.CompressString(JsonConvert.SerializeObject(newAudit))));
                 _msgServer.Flush();
@@ -266,7 +267,7 @@ namespace openrmf_upload_api.Controllers
               // publish an audit event
               _logger.LogInformation("UpdateChecklist() publish an audit message on an updated checklist {0}.", checklistFile.FileName);
               Audit newAudit = GenerateAuditMessage(claim, "update checklist");
-              newAudit.message = string.Format("UpdateChecklist() publish an audit message on an updated checklist {0} with file {1}.", id, checklistFile.FileName);
+              newAudit.message = string.Format("UpdateChecklist() updated the checklist {0} with file {1}.", id, checklistFile.FileName);
               newAudit.url = "PUT /";
               _msgServer.Publish("openrmf.audit.upload", Encoding.UTF8.GetBytes(Compression.CompressString(JsonConvert.SerializeObject(newAudit))));
               _msgServer.Flush();
