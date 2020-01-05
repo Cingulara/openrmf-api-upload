@@ -267,7 +267,7 @@ namespace openrmf_upload_api.Controllers
               // publish an audit event
               _logger.LogInformation("UpdateChecklist() publish an audit message on an updated checklist {0}.", checklistFile.FileName);
               Audit newAudit = GenerateAuditMessage(claim, "update checklist");
-              newAudit.message = string.Format("UpdateChecklist() updated the checklist {0} with file {1}.", id, checklistFile.FileName);
+              newAudit.message = string.Format("UpdateChecklist() updated checklist {0} with file {1}.", id, checklistFile.FileName);
               newAudit.url = "PUT /";
               _msgServer.Publish("openrmf.audit.upload", Encoding.UTF8.GetBytes(Compression.CompressString(JsonConvert.SerializeObject(newAudit))));
               _msgServer.Flush();
