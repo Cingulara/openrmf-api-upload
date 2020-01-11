@@ -60,7 +60,7 @@ namespace openrmf_upload_api.Models
 
             // get the hostname and other facts off the computer that was SCAP scanned
             XmlNodeList targetFacts = xmlDoc.GetElementsByTagName(searchTag + ":fact");
-            if (targetFacts != null && targetFacts.Count > 0 && title.Item(0).FirstChild != null) {
+            if (targetFacts != null && targetFacts.Count > 0) {
                 foreach (XmlNode node in targetFacts) {
                     if (node.Attributes.Count > 1 && node.Attributes[1].InnerText.EndsWith("host_name")) {
                         // grab the Node's InnerText
