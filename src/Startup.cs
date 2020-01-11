@@ -9,8 +9,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.Swagger;
 using Prometheus;
+using OpenTracing;
+using OpenTracing.Util;
+using Jaeger;
+using Jaeger.Samplers;
 
 using openrmf_upload_api.Models;
 using openrmf_upload_api.Data;
@@ -38,6 +43,28 @@ namespace openrmf_upload_api
                 options.ConnectionString = Environment.GetEnvironmentVariable("MONGODBCONNECTION");
                 options.Database = Environment.GetEnvironmentVariable("MONGODB");
             });
+            
+            // Use "OpenTracing.Contrib.NetCore" to automatically generate spans for ASP.NET Core
+            services.AddSingleton<ITracer>(serviceProvider =>  
+            {  
+                string serviceName = System.Reflection.Assembly.GetEntryAssembly().GetName().Name;  
+            
+                ILoggerFactory loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();  
+            
+                ISampler sampler = new ConstSampler(sample: true);  
+            
+                ITracer tracer = new Tracer.Builder(serviceName)  
+                    .WithLoggerFactory(loggerFactory)  
+                    .WithSampler(sampler)  
+                    .Build();  
+            
+                GlobalTracer.Register(tracer);  
+            
+                return tracer;  
+            });
+            services.AddOpenTracing();
+
+            // add repositories
             
             // Create a new connection factory to create a connection.
             ConnectionFactory cf = new ConnectionFactory();
