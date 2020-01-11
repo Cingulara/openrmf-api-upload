@@ -21,7 +21,7 @@ namespace openrmf_upload_api.Models
             SCAPRuleResultSet results = new SCAPRuleResultSet();
             // get the title of the SCAP scan we are using, which correlates to the Checklist
             // if a Nessus SCAP it uses "xccdf" tags
-            xmlfile = xmlfile.Replace("\n","").Replace("\t","");// .Replace("<xccdf:","<cdf:").Replace("</xccdf:","</cdf:");
+            xmlfile = xmlfile.Replace("\n","").Replace("\t","");
             string searchTag = "cdf";
             if (xmlfile.IndexOf("</xccdf:") > 0)
                 searchTag = "xccdf";
@@ -73,12 +73,12 @@ namespace openrmf_upload_api.Models
             // get all the rules and their pass/fail results
             XmlNodeList ruleResults = xmlDoc.GetElementsByTagName(searchTag + ":rule-result");
             if (ruleResults != null && ruleResults.Count > 0 && ruleResults.Item(0).FirstChild != null) {
-                results.ruleResults = GetResultsListing(ruleResults);
+                results.ruleResults = GetResultsListing(ruleResults, searchTag);
             }
             return results;
         }
 
-        private static List<SCAPRuleResult> GetResultsListing(XmlNodeList nodes) {
+        private static List<SCAPRuleResult> GetResultsListing(XmlNodeList nodes, string searchTag) {
             List<SCAPRuleResult> ruleResults = new List<SCAPRuleResult>();
             SCAPRuleResult result;
             
@@ -92,7 +92,7 @@ namespace openrmf_upload_api.Models
                 if (node.ChildNodes.Count > 0) {
                     foreach (XmlElement child in node.ChildNodes) {
                         // switch on the fields left over to fill them in the SCAPRuleResult class 
-                        if (child.Name == "cdf:result") {
+                        if (child.Name == searchTag + ":result") {
                                 // pass or fail
                                 result.result = child.InnerText;
                                 break;
