@@ -1,11 +1,9 @@
-using System;
+// Copyright (c) Cingulara LLC 2019 and Tutela LLC 2019. All rights reserved.
+// Licensed under the GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007 license. See LICENSE file in the project root for full license information.
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using openrmf_upload_api.Classes;
 using System.IO;
-using System.Text;
-using System.Xml.Serialization;
 using System.Xml;
 
 namespace openrmf_upload_api.Models
@@ -22,20 +20,47 @@ namespace openrmf_upload_api.Models
         public static SCAPRuleResultSet LoadSCAPScan(string xmlfile) {
             SCAPRuleResultSet results = new SCAPRuleResultSet();
             // get the title of the SCAP scan we are using, which correlates to the Checklist
+            // if a Nessus SCAP it uses "xccdf" tags
             xmlfile = xmlfile.Replace("\n","").Replace("\t","");
+            string searchTag = "cdf";
+            if (xmlfile.IndexOf("</xccdf:") > 0)
+                searchTag = "xccdf";
+
+            // now process the document
             XmlDocument xmlDoc = new XmlDocument();
             xmlDoc.LoadXml(xmlfile);
 
             // get the template title from the SCAP to use to grab an empty Checklist
-            XmlNodeList title = xmlDoc.GetElementsByTagName("cdf:title");
+            XmlNodeList title = xmlDoc.GetElementsByTagName(searchTag + ":title");
             if (title != null && title.Count > 0 && title.Item(0).FirstChild != null) {
                 // get the title of the STIG so we can ask for the checklist later to fill in
                 results.title = title.Item(0).FirstChild.InnerText;
+            } else {
+                // if not a DoD SCAP this is a Nessus SCAP (or trash)
+                title = xmlDoc.GetElementsByTagName("xccdf:benchmark");
+                if (title != null && title.Count > 0) {
+                    // get the title of the STIG so we can ask for the checklist later to fill in
+                    foreach (XmlNode node in title) {
+                        if (node.Attributes.Count > 1 ) {
+                            foreach (XmlAttribute attr in node.Attributes) {
+                                if (attr.Name == "href" && !string.IsNullOrEmpty(attr.Value)) {
+                                    // grab the Attribute's value
+                                    if (!string.IsNullOrEmpty(attr.Value)) {
+                                        results.title = attr.Value.Substring(0, attr.Value.IndexOf("_STIG_SCAP"));
+                                        break; // we found it
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
+            if (string.IsNullOrEmpty(results.title))
+                return results; // just return empty as we cannot match
 
             // get the hostname and other facts off the computer that was SCAP scanned
-            XmlNodeList targetFacts = xmlDoc.GetElementsByTagName("cdf:fact");
-            if (targetFacts != null && targetFacts.Count > 0 && title.Item(0).FirstChild != null) {
+            XmlNodeList targetFacts = xmlDoc.GetElementsByTagName(searchTag + ":fact");
+            if (targetFacts != null && targetFacts.Count > 0) {
                 foreach (XmlNode node in targetFacts) {
                     if (node.Attributes.Count > 1 && node.Attributes[1].InnerText.EndsWith("host_name")) {
                         // grab the Node's InnerText
@@ -46,14 +71,14 @@ namespace openrmf_upload_api.Models
             }
 
             // get all the rules and their pass/fail results
-            XmlNodeList ruleResults = xmlDoc.GetElementsByTagName("cdf:rule-result");
+            XmlNodeList ruleResults = xmlDoc.GetElementsByTagName(searchTag + ":rule-result");
             if (ruleResults != null && ruleResults.Count > 0 && ruleResults.Item(0).FirstChild != null) {
-                results.ruleResults = GetResultsListing(ruleResults);
+                results.ruleResults = GetResultsListing(ruleResults, searchTag);
             }
             return results;
         }
 
-        private static List<SCAPRuleResult> GetResultsListing(XmlNodeList nodes) {
+        private static List<SCAPRuleResult> GetResultsListing(XmlNodeList nodes, string searchTag) {
             List<SCAPRuleResult> ruleResults = new List<SCAPRuleResult>();
             SCAPRuleResult result;
             
@@ -67,7 +92,7 @@ namespace openrmf_upload_api.Models
                 if (node.ChildNodes.Count > 0) {
                     foreach (XmlElement child in node.ChildNodes) {
                         // switch on the fields left over to fill them in the SCAPRuleResult class 
-                        if (child.Name == "cdf:result") {
+                        if (child.Name == searchTag + ":result") {
                                 // pass or fail
                                 result.result = child.InnerText;
                                 break;
