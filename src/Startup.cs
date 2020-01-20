@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Copyright (c) Cingulara LLC 2019 and Tutela LLC 2019. All rights reserved.
+// Licensed under the GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007 license. See LICENSE file in the project root for full license information.
+using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.IdentityModel.Tokens;
@@ -7,7 +9,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.Swagger;
+using Prometheus;
+using OpenTracing;
+using OpenTracing.Util;
+using Jaeger;
+using Jaeger.Samplers;
 
 using openrmf_upload_api.Models;
 using openrmf_upload_api.Data;
@@ -27,17 +35,74 @@ namespace openrmf_upload_api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            // Register the database components
+            var logger = NLog.Web.NLogBuilder.ConfigureNLog("nlog.config").GetCurrentClassLogger();
 
+            // Register the database components
             services.Configure<Settings>(options =>
             {
                 options.ConnectionString = Environment.GetEnvironmentVariable("MONGODBCONNECTION");
                 options.Database = Environment.GetEnvironmentVariable("MONGODB");
             });
             
+            // Use "OpenTracing.Contrib.NetCore" to automatically generate spans for ASP.NET Core
+            services.AddSingleton<ITracer>(serviceProvider =>  
+            {  
+                string serviceName = System.Reflection.Assembly.GetEntryAssembly().GetName().Name;  
+            
+                ILoggerFactory loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();  
+            
+                ISampler sampler = new ConstSampler(sample: true);  
+            
+                ITracer tracer = new Tracer.Builder(serviceName)  
+                    .WithLoggerFactory(loggerFactory)  
+                    .WithSampler(sampler)  
+                    .Build();  
+            
+                GlobalTracer.Register(tracer);  
+            
+                return tracer;  
+            });
+            services.AddOpenTracing();
+
+            // add repositories
+            
             // Create a new connection factory to create a connection.
             ConnectionFactory cf = new ConnectionFactory();
-            IConnection conn = cf.CreateConnection(Environment.GetEnvironmentVariable("NATSSERVERURL"));
+            
+            // add the options for the server, reconnecting, and the handler events
+            Options opts = ConnectionFactory.GetDefaultOptions();
+            opts.MaxReconnect = -1;
+            opts.ReconnectWait = 1000;
+            opts.Name = "openrmf-api-upload";
+            opts.Url = Environment.GetEnvironmentVariable("NATSSERVERURL");
+            opts.AsyncErrorEventHandler += (sender, events) =>
+            {
+                logger.Info("NATS client error. Server: {0}. Message: {1}. Subject: {2}", events.Conn.ConnectedUrl, events.Error, events.Subscription.Subject);
+            };
+
+            opts.ServerDiscoveredEventHandler += (sender, events) =>
+            {
+                logger.Info("A new server has joined the cluster: {0}", events.Conn.DiscoveredServers);
+            };
+
+            opts.ClosedEventHandler += (sender, events) =>
+            {
+                logger.Info("Connection Closed: {0}", events.Conn.ConnectedUrl);
+            };
+
+            opts.ReconnectedEventHandler += (sender, events) =>
+            {
+                logger.Info("Connection Reconnected: {0}", events.Conn.ConnectedUrl);
+            };
+
+            opts.DisconnectedEventHandler += (sender, events) =>
+            {
+                logger.Info("Connection Disconnected: {0}", events.Conn.ConnectedUrl);
+            };
+            
+            // Creates a live connection to the NATS Server with the above options
+            IConnection conn = cf.CreateConnection(opts);
+
             // setup the NATS server
             services.Configure<NATSServer>(options =>
             {
@@ -125,6 +190,20 @@ namespace openrmf_upload_api
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
+            // Custom Metrics to count requests for each endpoint and the method
+            var counter = Metrics.CreateCounter("openrmf_upload_api_path_counter", "Counts requests to OpenRMF endpoints", new CounterConfiguration
+            {
+                LabelNames = new[] { "method", "endpoint" }
+            });
+            app.Use((context, next) =>
+            {
+                counter.WithLabels(context.Request.Method, context.Request.Path).Inc();
+                return next();
+            });
+            // Use the Prometheus middleware
+            app.UseMetricServer();
+            app.UseHttpMetrics();
+            
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
