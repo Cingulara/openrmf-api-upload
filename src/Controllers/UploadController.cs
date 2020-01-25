@@ -310,6 +310,8 @@ namespace openrmf_upload_api.Controllers
             newArtifact.stigRelease = child.LastChild.InnerText;
           else if (child.FirstChild.InnerText == "title")
             newArtifact.stigType = child.LastChild.InnerText;
+          else if (child.FirstChild.InnerText == "version")
+              newArtifact.version = child.LastChild.InnerText;
         }
 
         // shorten the names a bit
