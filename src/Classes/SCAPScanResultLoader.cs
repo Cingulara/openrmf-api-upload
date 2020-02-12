@@ -58,6 +58,18 @@ namespace openrmf_upload_api.Models
             if (string.IsNullOrEmpty(results.title))
                 return results; // just return empty as we cannot match
 
+            // get the target-address
+            XmlNodeList targetAddresses = xmlDoc.GetElementsByTagName(searchTag + ":target-address");
+            if (targetAddresses != null && targetAddresses.Count > 0) {
+                foreach (XmlNode node in targetAddresses) {
+                    if (!string.IsNullOrEmpty(node.InnerText)) {
+                        // grab the Node's InnerText
+                        results.ipaddress = node.InnerText;
+                        break; // we found it
+                    }
+                }
+            }
+
             // get the hostname and other facts off the computer that was SCAP scanned
             XmlNodeList targetFacts = xmlDoc.GetElementsByTagName(searchTag + ":fact");
             if (targetFacts != null && targetFacts.Count > 0) {
@@ -136,6 +148,10 @@ namespace openrmf_upload_api.Models
                 // if we read in the hostname, then use it in the Checklist data
                 if (!string.IsNullOrEmpty(results.hostname)) {
                     chk.ASSET.HOST_NAME = results.hostname;
+                }
+                // if we have the IP Address, use that as well
+                if (!string.IsNullOrEmpty(results.ipaddress)) {
+                    chk.ASSET.HOST_IP = results.ipaddress;
                 }
                 // for each VULN see if there is a rule matching the rule in the 
                 foreach (VULN v in chk.STIGS.iSTIG.VULN) {
