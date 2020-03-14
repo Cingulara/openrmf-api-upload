@@ -23,7 +23,7 @@ namespace openrmf_upload_api.Models
         public string version {get; set;}
         public string stigRelease { get; set; }
         public string title { get {
-            return hostName.Trim() + "-" + stigType.Trim() + "-" + stigRelease.Trim();
+            return hostName.Trim() + "-" + stigType.Trim() + "-V" + version + "-" + stigRelease.Trim();
         }}
         
         [BsonId]

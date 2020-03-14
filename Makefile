@@ -1,4 +1,4 @@
-VERSION ?= 0.12.2
+VERSION ?= 0.12.3
 NAME ?= "openrmf-api-upload"
 AUTHOR ?= "Dale Bingham"
 PORT_EXT ?= 8086
