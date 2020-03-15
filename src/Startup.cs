@@ -63,8 +63,6 @@ namespace openrmf_upload_api
                 return tracer;  
             });
             services.AddOpenTracing();
-
-            // add repositories
             
             // Create a new connection factory to create a connection.
             ConnectionFactory cf = new ConnectionFactory();
@@ -109,6 +107,7 @@ namespace openrmf_upload_api
                 options.connection = conn;
             });
 
+            // add repositories
             services.AddTransient<IArtifactRepository, ArtifactRepository>();
             services.AddTransient<ISystemGroupRepository, SystemGroupRepository>();
 
