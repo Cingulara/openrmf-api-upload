@@ -105,5 +105,13 @@ namespace openrmf_upload_api.Data {
                 throw ex;
             }
         }
+
+        // check that the database is responding and it returns at least one collection name
+        public bool HealthStatus(){
+            var result = _context.SystemGroups.Database.ListCollectionNamesAsync().GetAwaiter().GetResult().FirstOrDefault();
+            if (!string.IsNullOrEmpty(result)) // we are good to go
+                return true;
+            return false;
+        }
     }
 }

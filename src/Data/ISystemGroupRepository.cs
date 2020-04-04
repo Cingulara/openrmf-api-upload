@@ -18,5 +18,7 @@ namespace openrmf_upload_api.Data {
 
         // update just a single system document
         Task<bool> UpdateSystemGroup(string id, SystemGroup body);
+
+        bool HealthStatus();
     }
 }
