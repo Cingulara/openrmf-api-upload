@@ -1,7 +1,7 @@
 ---
 name: Feature request
-about: Suggest an idea for the OpenRMF Score Message Service
-title: "[FEATURE] "
+about: Suggest an idea for the OpenRMF Upload API
+title: "[FEATURE]"
 labels: enhancement
 assignees: Cingulara
 
