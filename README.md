@@ -1,13 +1,12 @@
 ![.NET Core Build and Test](https://github.com/Cingulara/openrmf-api-upload/workflows/.NET%20Core%20Build%20and%20Test/badge.svg)
 
 # openrmf-api-upload
-This is the openRMF Upload API for uploading a CKL file. It has two calls.
+This is the OpenRMF Upload API for uploading a CKL file. It has two calls and talks to the 
+same database for the read, save, and upload APIs and message clients associated.
 
-POST to / to save a new checklist
-
-PUT to /{id} to update a new checklist content but keep the rest in tact
-
-/swagger/ gives you the API structure.
+* POST to / to save a new checklist
+* PUT to /{id} to update a new checklist content but keep the rest in tact
+* /swagger/ gives you the API structure.
 
 ## Making your local Docker image
 * make build
@@ -19,6 +18,12 @@ PUT to /{id} to update a new checklist content but keep the rest in tact
 * db.createUser({ user: "openrmf" , pwd: "openrmf1234!", roles: ["readWriteAnyDatabase"]});
 * use openrmf
 * db.createCollection("Artifacts");
+* db.Artifacts.createIndex({ systemGroupId: 1 })
+* db.Artifacts.createIndex({ stigType: 1 })
+* db.Artifacts.createIndex({ stigRelease: 1 })
+* db.Artifacts.createIndex({ version: 1 })
+* db.createCollection("SystemGroups");
+* db.SystemGroups.createIndex({ title: 1 })
 
 ## connecting to the database collection straight
 ~/mongodb/bin/mongo 'mongodb://openrmf:openrmf1234!@localhost/openrmf?authSource=admin'
