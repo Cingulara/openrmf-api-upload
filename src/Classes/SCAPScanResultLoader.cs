@@ -162,7 +162,7 @@ namespace openrmf_upload_api.Models
                         if (result != null) {
                             // set the status
                             // only mark fails IF this is a new one, otherwise leave alone
-                            if (result.result.ToLower() == "fail" && newChecklist) {
+                            if (result.result.ToLower() == "fail") {
                                 v.STATUS = "Open";
                             } 
                             // mark the pass on any checklist item we find that passed
