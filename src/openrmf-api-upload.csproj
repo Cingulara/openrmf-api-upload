@@ -8,7 +8,7 @@
     <ProjectGuid>{8664114e-ebd6-4413-8490-7a754518dd3d}</ProjectGuid>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
-    <Version>0.15.01</Version>
+    <Version>1.0</Version>
     <InformationalVersion>This is a beta of the OpenRMF Tool Upload API from Cingulara</InformationalVersion>
   </PropertyGroup>
 
