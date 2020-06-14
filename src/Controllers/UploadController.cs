@@ -133,6 +133,16 @@ namespace openrmf_upload_api.Controllers
                     // create the new record for saving into the DB
                     Artifact newArtifact = MakeArtifactRecord(rawChecklist);
 
+                    // per https://github.com/Cingulara/openrmf-docs/issues/126 mandate a hostname
+                    if (string.IsNullOrEmpty(newArtifact.hostName)) {
+                      // add to the list of failed uploads
+                      uploadResult.failed++;
+                      uploadResult.failedUploads.Add(file.FileName);
+                      // log it
+                      _logger.LogWarning("UploadNewChecklist() error on checklist file not having a valid hostname: {0}.", file.FileName.ToLower());
+                      continue; // go on to the next one if there is one
+                    }
+
                     if (claim != null) { // get the value
                       _logger.LogInformation("UploadNewChecklist() setting the created by ID of the checklist {0}.", file.FileName.ToLower());
                       newArtifact.createdBy = Guid.Parse(claim.Value);
@@ -307,7 +317,6 @@ namespace openrmf_upload_api.Controllers
         XmlDocument xmlDoc = new XmlDocument();
         xmlDoc.LoadXml(rawChecklist);
 
-        newArtifact.hostName = "Unknown-Host";
         XmlNodeList assetList = xmlDoc.GetElementsByTagName("ASSET");
         // get the host name from here
         foreach (XmlElement child in assetList.Item(0).ChildNodes)
