@@ -13,7 +13,8 @@ namespace openrmf_upload_api.Models
         }
 
         public int successful { get; set; }
-        public int failed { get; set;}
+        public int failed { get; set; }
+        public int updated { get; set; }
         public List<string> failedUploads { get; set;}
     }
 }
