@@ -201,7 +201,7 @@ namespace openrmf_upload_api.Controllers
                       // publish an audit event
                       _logger.LogInformation("UploadNewChecklist() publish an audit message on a new checklist {0}.", file.FileName.ToLower());
                       Audit newAudit = GenerateAuditMessage(claim, "add checklist");
-                      newAudit.message = string.Format("UploadNewChecklist() uploaded a new checklist {0} in system group ({1}) {2}.", file.FileName.ToLower(), sg.InternalId.ToString(), sg.title);
+                      newAudit.message = string.Format("UploadNewChecklist() uploaded a new checklist {0} {1} in system group ({2}) {3}.", file.FileName.ToLower(),record.title, sg.InternalId.ToString(), sg.title);
                       newAudit.url = "POST /";
                       _msgServer.Publish("openrmf.audit.upload", Encoding.UTF8.GetBytes(Compression.CompressString(JsonConvert.SerializeObject(newAudit))));
                       _msgServer.Flush();
@@ -214,7 +214,7 @@ namespace openrmf_upload_api.Controllers
                       // publish an audit event
                       _logger.LogInformation("UploadNewChecklist() publish an audit message on an updated checklist {0}.", file.FileName.ToLower());
                       Audit newAudit = GenerateAuditMessage(claim, "update checklist");
-                      newAudit.message = string.Format("UploadNewChecklist() updated checklist {0} with file {1}.", newArtifact.InternalId.ToString(), file.FileName.ToLower());
+                      newAudit.message = string.Format("UploadNewChecklist() updated checklist {0} {1} with file {2} in system group ({3}) {4}.", newArtifact.InternalId.ToString(), newArtifact.title, file.FileName.ToLower(), sg.InternalId.ToString(), sg.title);
                       newAudit.url = "POST /";
                       _msgServer.Publish("openrmf.audit.upload", Encoding.UTF8.GetBytes(Compression.CompressString(JsonConvert.SerializeObject(newAudit))));
                       _msgServer.Flush();
