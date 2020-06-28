@@ -21,5 +21,8 @@ namespace openrmf_upload_api.Data {
 
         // update just a single document
         Task<bool> UpdateArtifact(string id, Artifact body);
+
+        // see if there is a checklist based on the system, hostname, and STIG checklist type
+        Task<Artifact> GetArtifactBySystemHostnameAndType(string systemGroupId, string hostName, string stigType);
     }
 }
