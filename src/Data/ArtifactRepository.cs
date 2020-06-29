@@ -58,23 +58,23 @@ namespace openrmf_upload_api.Data {
             }
         }
 
-        // // query after body text, updated time, and header image size
-        // //
-        // public async Task<IEnumerable<Artifact>> GetArtifact(string bodyText, DateTime updatedFrom, long headerSizeLimit)
-        // {
-        //     try
-        //     {
-        //         var query = _context.Artifacts.Find(artifact => artifact.title.Contains(bodyText) &&
-        //                             artifact.updatedOn >= updatedFrom);
+        // query after body text, updated time, and header image size
+        //
+        public async Task<Artifact> GetArtifactBySystemHostnameAndType(string systemGroupId, string hostName, string stigType)
+        {
+            try
+            {
+                var query = _context.Artifacts.Find(artifact => artifact.systemGroupId == systemGroupId &&
+                                    artifact.hostName == hostName && artifact.stigType == stigType);
 
-        //         return await query.ToListAsync();
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         // log or manage the exception
-        //         throw ex;
-        //     }
-        // }
+                return await query.FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                // log or manage the exception
+                throw ex;
+            }
+        }
         
         public async Task<Artifact> AddArtifact(Artifact item)
         {

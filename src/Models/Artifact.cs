@@ -13,6 +13,7 @@ namespace openrmf_upload_api.Models
         }
 
         public DateTime created { get; set; }
+        public CHECKLIST CHECKLIST { get; set; }
         public string rawChecklist { get; set; }
 
         // if this is part of a system, list that system group ID here
