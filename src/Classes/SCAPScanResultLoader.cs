@@ -22,7 +22,11 @@ namespace openrmf_upload_api.Models
             // get the title of the SCAP scan we are using, which correlates to the Checklist
             // if a Nessus SCAP it uses "xccdf" tags
             xmlfile = xmlfile.Replace("\n","").Replace("\t","");
-            string searchTag = "cdf";
+            string searchTag = "";
+            // see if this is a DISA SCAP
+            if (xmlfile.IndexOf("</cdf:") > 0)
+                searchTag = "cdf:";
+            // see if this is a Nessus SCAP
             if (xmlfile.IndexOf("</xccdf:") > 0)
                 searchTag = "xccdf";
 
@@ -31,7 +35,7 @@ namespace openrmf_upload_api.Models
             xmlDoc.LoadXml(xmlfile);
 
             // get the template title from the SCAP to use to grab an empty Checklist
-            XmlNodeList title = xmlDoc.GetElementsByTagName(searchTag + ":title");
+            XmlNodeList title = xmlDoc.GetElementsByTagName(searchTag + "title");
             if (title != null && title.Count > 0 && title.Item(0).FirstChild != null) {
                 // get the title of the STIG so we can ask for the checklist later to fill in
                 results.title = title.Item(0).FirstChild.InnerText;
@@ -59,7 +63,7 @@ namespace openrmf_upload_api.Models
                 return results; // just return empty as we cannot match
 
             // get the target-address
-            XmlNodeList targetAddresses = xmlDoc.GetElementsByTagName(searchTag + ":target-address");
+            XmlNodeList targetAddresses = xmlDoc.GetElementsByTagName(searchTag + "target-address");
             if (targetAddresses != null && targetAddresses.Count > 0) {
                 foreach (XmlNode node in targetAddresses) {
                     if (!string.IsNullOrEmpty(node.InnerText)) {
@@ -70,11 +74,11 @@ namespace openrmf_upload_api.Models
                 }
             }
 
-            // get the hostname and other facts off the computer that was SCAP scanned
-            XmlNodeList targetFacts = xmlDoc.GetElementsByTagName(searchTag + ":fact");
+            // get the target (machine name) off the computer that was SCAP scanned
+            XmlNodeList targetFacts = xmlDoc.GetElementsByTagName(searchTag + "target");
             if (targetFacts != null && targetFacts.Count > 0) {
                 foreach (XmlNode node in targetFacts) {
-                    if (node.Attributes.Count > 1 && node.Attributes[1].InnerText.EndsWith("host_name")) {
+                    if (!string.IsNullOrEmpty(node.InnerText)) {
                         // grab the Node's InnerText
                         results.hostname = node.InnerText;
                         break; // we found it
@@ -82,8 +86,23 @@ namespace openrmf_upload_api.Models
                 }
             }
 
+            // if we did not get hostname from above, look in another place
+            if (string.IsNullOrEmpty(results.hostname)) {
+                // get the hostname and other facts off the computer that was SCAP scanned
+                XmlNodeList targetFactsHostname = xmlDoc.GetElementsByTagName(searchTag + "fact");
+                if (targetFactsHostname != null && targetFactsHostname.Count > 0) {
+                    foreach (XmlNode node in targetFactsHostname) {
+                        if (node.Attributes.Count > 1 && node.Attributes[1].InnerText.EndsWith("host_name")) {
+                            // grab the Node's InnerText
+                            results.hostname = node.InnerText;
+                            break; // we found it
+                        }
+                    }
+                }
+            }
+
             // get all the rules and their pass/fail results
-            XmlNodeList ruleResults = xmlDoc.GetElementsByTagName(searchTag + ":rule-result");
+            XmlNodeList ruleResults = xmlDoc.GetElementsByTagName(searchTag + "rule-result");
             if (ruleResults != null && ruleResults.Count > 0 && ruleResults.Item(0).FirstChild != null) {
                 results.ruleResults = GetResultsListing(ruleResults, searchTag);
             }
@@ -104,7 +123,7 @@ namespace openrmf_upload_api.Models
                 if (node.ChildNodes.Count > 0) {
                     foreach (XmlElement child in node.ChildNodes) {
                         // switch on the fields left over to fill them in the SCAPRuleResult class 
-                        if (child.Name == searchTag + ":result") {
+                        if (child.Name == searchTag + "result") {
                                 // pass or fail
                                 result.result = child.InnerText;
                                 break;
