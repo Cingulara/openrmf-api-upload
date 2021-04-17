@@ -46,20 +46,23 @@ namespace openrmf_upload_api
                     options.Database = Environment.GetEnvironmentVariable("DB");
                 });
             }
-            
-            // Use "OpenTracing.Contrib.NetCore" to automatically generate spans for ASP.NET Core
-            services.AddSingleton<ITracer>(serviceProvider =>  
-            {                
-                var loggerFactory = new LoggerFactory();
-                // use the environment variables to setup the Jaeger endpoints
-                var config = Jaeger.Configuration.FromEnv(loggerFactory);
-                var tracer = config.GetTracer();
-            
-                GlobalTracer.Register(tracer);  
-            
-                return tracer;  
-            });
-            services.AddOpenTracing();
+
+            if (Environment.GetEnvironmentVariable("JAEGER_AGENT_HOST") != null && 
+                !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("JAEGER_AGENT_HOST"))) {
+                // Use "OpenTracing.Contrib.NetCore" to automatically generate spans for ASP.NET Core
+                services.AddSingleton<ITracer>(serviceProvider =>  
+                {                
+                    var loggerFactory = new LoggerFactory();
+                    // use the environment variables to setup the Jaeger endpoints
+                    var config = Jaeger.Configuration.FromEnv(loggerFactory);
+                    var tracer = config.GetTracer();
+                
+                    GlobalTracer.Register(tracer);  
+                
+                    return tracer;  
+                });
+                services.AddOpenTracing();
+            }
             
             // Create a new connection factory to create a connection.
             ConnectionFactory cf = new ConnectionFactory();
