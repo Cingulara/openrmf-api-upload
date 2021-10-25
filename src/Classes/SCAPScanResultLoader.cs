@@ -21,7 +21,7 @@ namespace openrmf_upload_api.Models
             SCAPRuleResultSet results = new SCAPRuleResultSet();
             // get the title of the SCAP scan we are using, which correlates to the Checklist
             // if a Nessus SCAP it uses "xccdf" tags
-            xmlfile = xmlfile.Replace("\n","").Replace("\t","");
+            xmlfile = xmlfile.Replace("\t","");
             string searchTag = "";
             // see if this is a DISA SCAP
             if (xmlfile.IndexOf("</cdf:") > 0)
