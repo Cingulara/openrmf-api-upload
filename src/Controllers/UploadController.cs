@@ -346,7 +346,7 @@ namespace openrmf_upload_api.Controllers
         newArtifact.hostName = "Unknown"; // default
 
         // parse the checklist and get the data needed
-        rawChecklist = rawChecklist.Replace("\n","").Replace("\t","");
+        rawChecklist = rawChecklist.Replace("\t","");
         XmlDocument xmlDoc = new XmlDocument();
         xmlDoc.LoadXml(rawChecklist);
 
