@@ -101,6 +101,27 @@ namespace openrmf_upload_api.Models
                 }
             }
 
+            // GET the TestResult XML and grab test-system attribute and the end-time attribute
+            // put into the format below IF you find it:
+            // Tool: cpe:/a:spawar:scc:5.0.1
+            // Time: 2019-04-19T17:13:08
+            // Result: pass
+
+            // get the CPE tool information and scan time
+            XmlNodeList toolInformation = xmlDoc.GetElementsByTagName(searchTag + "TestResult");
+            if (toolInformation != null && toolInformation.Count > 0 && toolInformation.Item(0).FirstChild != null) {
+                foreach (XmlNode node in toolInformation) {
+                    foreach (XmlAttribute attr in node.Attributes) {
+                        if (attr.Name == "end-time") {
+                            results.scanTime = attr.InnerText;
+                        }
+                        if (attr.Name == "test-system") {
+                            results.scanTool = attr.InnerText;
+                        }
+                    }
+                }
+            } 
+
             // get all the rules and their pass/fail results
             XmlNodeList ruleResults = xmlDoc.GetElementsByTagName(searchTag + "rule-result");
             if (ruleResults != null && ruleResults.Count > 0 && ruleResults.Item(0).FirstChild != null) {
@@ -118,6 +139,8 @@ namespace openrmf_upload_api.Models
                 foreach (XmlAttribute attr in node.Attributes) {
                     if (attr.Name == "idref") {
                         result.ruleId = attr.InnerText.Replace("xccdf_mil.disa.stig_rule_","");
+                    } else if (attr.Name == "version") {
+                        result.ruleVersion = attr.InnerText;
                     }
                 }
                 if (node.ChildNodes.Count > 0) {
@@ -162,6 +185,7 @@ namespace openrmf_upload_api.Models
             // process the raw checklist into the CHECKLIST structure
             CHECKLIST chk = ChecklistLoader.LoadChecklist(checklistString);
             STIG_DATA data;
+            STIG_DATA vulnNum;
             SCAPRuleResult result;
             if (chk != null) {
                 // if we read in the hostname, then use it in the Checklist data
@@ -172,25 +196,35 @@ namespace openrmf_upload_api.Models
                 if (!string.IsNullOrEmpty(results.ipaddress)) {
                     chk.ASSET.HOST_IP = results.ipaddress;
                 }
+
+                string findingDetails = string.Format("Tool: {0}\nTime: {1}\nResult: ", results.scanTool, results.scanTime);
+
                 // for each VULN see if there is a rule matching the rule in the 
                 foreach (VULN v in chk.STIGS.iSTIG.VULN) {
-                    data = v.STIG_DATA.Where(y => y.VULN_ATTRIBUTE == "Rule_ID").FirstOrDefault();
-                    if (data != null) {
+                    data = v.STIG_DATA.Where(y => y.VULN_ATTRIBUTE == "Rule_Ver").FirstOrDefault();
+                    vulnNum = v.STIG_DATA.Where(y => y.VULN_ATTRIBUTE == "Vuln_Num").FirstOrDefault();
+                    // if we find the VULN id and the Rule Ver, and the VULN id is NOT in the list of "locked" you can update it
+                    if (data != null && vulnNum != null) {
                         // find if there is a matching rule
-                        result = results.ruleResults.Where(z => z.ruleId.ToLower() == data.ATTRIBUTE_DATA.ToLower()).FirstOrDefault();
+                        result = results.ruleResults.Where(z => z.ruleVersion.ToLower() == data.ATTRIBUTE_DATA.ToLower()).FirstOrDefault();
                         if (result != null) {
                             // set the status
                             // only mark fails IF this is a new one, otherwise leave alone
                             if (result.result.ToLower() == "fail") {
                                 v.STATUS = "Open";
+                                v.FINDING_DETAILS = findingDetails + "fail";
                             } 
                             // mark the pass on any checklist item we find that passed
                             else if (result.result.ToLower() == "pass") {
                                 v.STATUS = "NotAFinding";
+                                v.FINDING_DETAILS = findingDetails + "pass";
                             }
                         }
                     }
                 }
+            } else {
+                // this is not a valid file
+                return "";
             }
             // serialize into a string again
             System.Xml.Serialization.XmlSerializer xmlSerializer = new System.Xml.Serialization.XmlSerializer(chk.GetType());
