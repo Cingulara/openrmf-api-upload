@@ -18,5 +18,6 @@ namespace openrmf_upload_api.Models
 
         public string ruleId { get; set; }
         public string result { get; set; }
+        public string ruleVersion { get; set; }
     }
 }

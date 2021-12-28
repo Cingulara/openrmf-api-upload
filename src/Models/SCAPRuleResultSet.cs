@@ -21,6 +21,8 @@ namespace openrmf_upload_api.Models
         public string title { get; set; }
         public string hostname { get; set; }
         public string ipaddress { get; set;}
+        public string scanTool { get; set; }
+        public string scanTime { get; set;}
         public List<SCAPRuleResult> ruleResults { get; set; }
     }
 }

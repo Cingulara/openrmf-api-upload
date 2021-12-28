@@ -390,7 +390,7 @@ namespace openrmf_upload_api.Controllers
         return newArtifact;
       }
       private string SanitizeData (string rawdata) {
-        return rawdata.Replace("\t","").Replace(">\n<","><");
+        return rawdata.Replace("\t","");
       }
 
       private Audit GenerateAuditMessage(System.Security.Claims.Claim claim, string action) {
