@@ -1,7 +1,4 @@
 {
-   // Use IntelliSense to find out which attributes exist for C# debugging
-   // Use hover for the description of the existing attributes
-   // For further information visit https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
    "version": "0.2.0",
    "configurations": [
         {
@@ -10,7 +7,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/bin/Debug/netcoreapp3.1/openrmf-api-upload.dll",
+            "program": "${workspaceFolder}/bin/Debug/net6.0/openrmf-api-upload.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
@@ -38,10 +35,6 @@
                 "NATSSERVERURL": "nats://127.0.0.1:4222",
                 "JWTAUTHORITY" : "http://localhost:9001/auth/realms/openrmf",
                 "JWTCLIENT": "openrmf"
-                // "JAEGER_AGENT_HOST": "localhost",
-                // "JAEGER_AGENT_PORT": "6831",
-                // "JAEGER_SERVICE_NAME": "openrmf-api-upload",
-                // "JAEGER_SAMPLER_TYPE": "const"
             },
             "sourceFileMap": {
                 "/Views": "${workspaceFolder}/Views"
