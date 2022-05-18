@@ -304,6 +304,89 @@ namespace openrmf_upload_api.Controllers
           }
         }
       
+        /// <summary>
+        /// POST Called from the OpenRMF UI to create a new checklist in a system package from a template page.
+        /// </summary>
+        /// <param name="systemGroupId">The system Id if adding to a current system</param>
+        /// <param name="templateId">The template Id to use</param>
+        /// <returns>
+        /// HTTP Status showing it was created or that there is an error.
+        /// </returns>
+        /// <response code="200">Returns the newly updated item</response>
+        /// <response code="400">If the item did not create correctly</response>
+        /// <response code="404">If the ID passed in is not valid</response>
+        [HttpPost("{systemGroupId}/template/{templateId}")]
+        [Authorize(Roles = "Administrator,Editor,Assessor")]
+        public async Task<IActionResult> CreateNewChecklist(string systemGroupId, string templateId)
+        {
+            try {
+                // grab the user/system ID from the token if there which is *should* always be
+                var claim = this.User.Claims.Where(x => x.Type == System.Security.Claims.ClaimTypes.NameIdentifier).FirstOrDefault();
+                // make sure the SYSTEM GROUP is valid here and then add the checklist
+                SystemGroup sg = await _systemRepo.GetSystemGroup(systemGroupId);
+                if (sg == null) {
+                    _logger.LogWarning("CreateNewChecklist() passed an invalid systemGroupId {0}.", systemGroupId);
+                    return NotFound();
+                }
+
+                // go get this as a template ID and if not valid, return NotFound() as well
+                string rawChecklist =  NATSClient.GetArtifactByTemplateTitle(templateId);
+                if (string.IsNullOrEmpty(rawChecklist)) {
+                    _logger.LogWarning("CreateNewChecklist() passed an invalid templateId {0}.", templateId);
+                    return NotFound();
+                }
+                rawChecklist = SanitizeData(rawChecklist);
+
+                // create the new record for saving into the DB
+                Artifact newArtifact = MakeArtifactRecord(rawChecklist);
+                // add the system record ID to the Artifact to know how to query it
+                _logger.LogInformation("CreateNewChecklist() setting the title of the checklist {0}.", newArtifact.title);
+                newArtifact.systemGroupId = sg.InternalId.ToString();
+                // store the title for ease of use
+                newArtifact.systemTitle = sg.title;
+                newArtifact.created = DateTime.Now;
+
+                if (claim != null) { // get the value
+                    _logger.LogInformation("CreateNewChecklist() setting the created by ID of the checklist {0}.", newArtifact.title);
+                    newArtifact.createdBy = Guid.Parse(claim.Value);
+                    sg.updatedBy = Guid.Parse(claim.Value);
+                }
+
+                // save the artifact record and checklist to the database
+                _logger.LogInformation("CreateNewChecklist() saving the new checklist {0} to the database", newArtifact.title);
+                Artifact record  = await _artifactRepo.AddArtifact(newArtifact);
+                _logger.LogInformation("CreateNewChecklist() saved the checklist {0} to the database.", newArtifact.title);
+
+                sg.updatedOn = DateTime.Now;
+                var updated = _systemRepo.UpdateSystemGroup(systemGroupId, sg).GetAwaiter().GetResult();
+
+                // publish to the openrmf save message the artifactId we can use
+                if (record != null)
+                _logger.LogInformation("CreateNewChecklist() publish a message on a new checklist {0} for the scoring of it.", record.title);
+                _msgServer.Publish("openrmf.checklist.save.new", Encoding.UTF8.GetBytes(record.InternalId.ToString()));
+                // publish to update the system checklist count
+                _logger.LogInformation("CreateNewChecklist() publish a message on a new checklist {0} for updating the count of checklists in the system.", newArtifact.title);
+                _msgServer.Publish("openrmf.system.count.add", Encoding.UTF8.GetBytes(record.systemGroupId));
+                _msgServer.Flush();
+
+                // publish an audit event
+                _logger.LogInformation("CreateNewChecklist() publish an audit message on a new checklist {0}.", newArtifact.title);
+                Audit newAudit = GenerateAuditMessage(claim, "add checklist");
+                newAudit.message = string.Format("CreateNewChecklist() created a new checklist {0} in system group ({1}) {2}.", record.title, sg.InternalId.ToString(), sg.title);
+                newAudit.url = string.Format("POST /{0}/template/{1}", systemGroupId, templateId);
+                _msgServer.Publish("openrmf.audit.upload", Encoding.UTF8.GetBytes(Compression.CompressString(JsonConvert.SerializeObject(newAudit))));
+                _msgServer.Flush();
+
+                _logger.LogInformation("Called CreateNewChecklist() for checklist {0} successfully", newArtifact.title);
+                return Ok();
+
+            }
+            catch (Exception ex) {
+                _logger.LogError(ex, "Error creating checklist from template");
+                return BadRequest();
+            }
+        }
+
       // this parses the text and system, generates the pieces, and returns the artifact to save
       private Artifact MakeArtifactRecord(string rawChecklist) {
         Artifact newArtifact = new Artifact();
