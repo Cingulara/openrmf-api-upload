@@ -115,7 +115,7 @@ namespace openrmf_upload_api
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "OpenRMF Upload API", Version = "v1", 
-                    Description = "The Upload API that goes with the OpenRMF tool",
+                    Description = "The Upload API that goes with the OpenRMF OSS Application",
                     Contact = new OpenApiContact
                     {
                         Name = "Dale Bingham",
@@ -160,6 +160,7 @@ namespace openrmf_upload_api
             services.AddAuthorization(options =>
             {
                 options.AddPolicy("Administrator", policy => policy.RequireRole("roles", "[Administrator]"));
+                options.AddPolicy("Download", policy => policy.RequireRole("roles", "[Download]"));
                 options.AddPolicy("Editor", policy => policy.RequireRole("roles", "[Editor]"));
                 options.AddPolicy("Reader", policy => policy.RequireRole("roles", "[Reader]"));
                 options.AddPolicy("Assessor", policy => policy.RequireRole("roles", "[Assessor]"));
